@@ -23,6 +23,11 @@ const studentSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    achievement: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     totalMarks: {
       type: Number,
       required: true,

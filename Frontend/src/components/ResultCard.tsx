@@ -5,7 +5,8 @@ export interface ResultData {
   name: string;
   roll: string;
   reg: string;
-  gpa: string;
+  gpa: number | string;
+  achievement?: string;
   marks: string | number;
   rank: number | string;
   totalStudents?: string | number;
@@ -101,7 +102,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
               GPA Result
             </span>
             <span className="font-outfit font-bold text-sm sm:text-base text-emerald-700">
-              {data.gpa}
+              {typeof data.gpa === 'number' ? data.gpa.toFixed(2) : data.gpa} {data.achievement ? `(${data.achievement})` : ''}
             </span>
           </div>
         </div>

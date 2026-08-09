@@ -6,7 +6,8 @@ export interface LeaderboardStudent {
   rank: number;
   name: string;
   roll: string;
-  gpa: number | string;
+  gpa: number;
+  achievement?: string;
   group: string;
   totalMarks: number;
   institution: string;
@@ -226,7 +227,7 @@ export const Leaderboard: React.FC = () => {
                         {/* 4. GPA Column */}
                         <td className="py-4 px-3 sm:px-4 text-center">
                           <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-xs font-bold whitespace-nowrap">
-                            {Number(student.gpa) === 5 ? '5.00' : student.gpa}
+                            {typeof student.gpa === 'number' ? student.gpa.toFixed(2) : student.gpa}
                           </span>
                         </td>
 
