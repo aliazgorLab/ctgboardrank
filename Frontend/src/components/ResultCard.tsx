@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Sparkles, Beaker, ArrowRight, User, Hash, Award, BarChart3, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Sparkles, User, Hash, Award, BarChart3, RefreshCw } from 'lucide-react';
 
 export interface ResultData {
   name: string;
@@ -124,29 +124,38 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
 
       </div>
 
-      {/* The "Next Step" CTA (Zahid's Chem Clinic) */}
-      <div className="bg-indigo-50/90 border border-indigo-100 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left">
-        <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl bg-indigo-600 text-white shrink-0 shadow-sm mt-0.5">
-            <Beaker className="w-5 h-5" />
+      {/* Result Special Offer CTA (Zahid's Chem Clinic) */}
+      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border border-amber-500/40 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-xl relative overflow-hidden text-white">
+        
+        {/* Soft Background Accent Lighting */}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 blur-2xl pointer-events-none -z-0" />
+
+        <div className="relative z-10 flex items-start gap-3.5">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 shrink-0 shadow-md mt-0.5">
+            <Sparkles className="w-5 h-5 text-slate-950" />
           </div>
-          <div className="space-y-0.5">
-            <h4 className="font-outfit font-bold text-sm text-indigo-950">
-              Next Mission: HSC Science
-            </h4>
-            <p className="text-xs text-indigo-800 font-medium leading-relaxed">
-              Claim your <strong className="text-indigo-950 font-bold">20% early-bird discount</strong> for Zahid's Chem Clinic Batch '28.
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h4 className="font-outfit font-black text-sm sm:text-base text-white tracking-wide">
+                🎓 SSC'26 Result Special Offer
+              </h4>
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-bold">
+                25%+ Scholarship
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-300 font-medium leading-relaxed">
+              অভিনন্দন! আপনার SSC'26 ফলাফলের ভিত্তিতে Zahid Sir's HSC'28 Chemistry Batch-এ পাচ্ছেন <strong className="text-amber-400 font-extrabold">25%+ Scholarship Discount</strong>.
             </p>
           </div>
         </div>
 
-        <a
-          href="#zahid-chem-clinic"
-          className="font-outfit font-bold text-xs sm:text-sm text-white bg-indigo-600 hover:bg-indigo-700 px-5 py-3 rounded-xl shadow-md hover:shadow-lg transition-all duration-200 whitespace-nowrap flex items-center gap-2 group w-full sm:w-auto justify-center"
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent('open-scholarship-modal'))}
+          className="relative z-10 font-outfit font-extrabold text-xs sm:text-sm text-slate-950 bg-amber-400 hover:bg-amber-300 px-6 py-3.5 rounded-xl shadow-lg shadow-amber-400/20 hover:shadow-amber-400/30 transition-all duration-200 whitespace-nowrap flex items-center gap-2 group w-full sm:w-auto justify-center cursor-pointer shrink-0"
         >
-          Claim Discount & Enroll
-          <ArrowRight className="w-4 h-4 text-indigo-200 group-hover:translate-x-1 transition-transform" />
-        </a>
+          <span>Claim 25%+ Scholarship →</span>
+        </button>
       </div>
 
     </div>
