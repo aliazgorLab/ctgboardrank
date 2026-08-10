@@ -39,9 +39,9 @@ export function Home() {
         reg: data.registration || 'N/A',
         gpa: typeof data.gpa === 'number' ? data.gpa : (parseFloat(data.gpa) || 5.0),
         achievement: data.achievement || (Number(data.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(data.gpa).toFixed(2)}`),
-        marks: data.totalMarks || data.marks || '1120',
+        marks: data.rankTotalMarks || data.totalMarks || data.marks || '1120',
         rank: data.boardRank || data.rank || '1',
-        totalStudents: data.totalStudents || '142,000+',
+        totalStudents: data.totalStudents || '126,914',
       });
     } catch (err: any) {
       console.error('Error fetching student rank:', err);

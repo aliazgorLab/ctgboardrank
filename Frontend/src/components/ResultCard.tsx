@@ -55,7 +55,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
         </div>
 
         <p className="font-jakarta text-xs sm:text-sm text-slate-500 font-medium pt-1">
-          Out of {data.totalStudents || '142,000+'} examinees in Chittagong Board
+          Out of {data.totalStudents || '126,914'} examinees in Chittagong Board
         </p>
       </div>
 
@@ -117,7 +117,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
               Total Marks
             </span>
             <span className="font-outfit font-bold text-sm sm:text-base text-slate-900">
-              {data.marks} / 1300
+              {data.marks} / 1450
             </span>
           </div>
         </div>
