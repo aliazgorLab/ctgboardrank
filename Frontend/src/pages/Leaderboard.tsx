@@ -107,7 +107,7 @@ export const Leaderboard: React.FC = () => {
             <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Top 1000 Standings
           </div>
           <h1 className="font-outfit font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight">
-            SSC '26 Official Board Leaderboard
+            SSC '26 Board Leaderboard
           </h1>
           <p className="font-jakarta text-base text-slate-600 font-medium">
             Top 1000 examinees across Chittagong Board ranked by Adjusted Total Marks (max 1300), GPA, Core Subject Marks, and Roll.
