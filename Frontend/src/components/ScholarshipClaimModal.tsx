@@ -320,7 +320,7 @@ export const ScholarshipClaimModal: React.FC = () => {
                       type="text"
                       name="sscRoll"
                       required
-                      placeholder="e.g. 109842"
+                      placeholder="e.g. 132254"
                       value={formData.sscRoll}
                       onChange={handleInputChange}
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
