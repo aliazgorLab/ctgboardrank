@@ -12,6 +12,9 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxy (Render, Nginx) for rate-limiting & IP identification
+app.set('trust proxy', 1);
+
 // Security Middlewares
 app.use(helmet());
 
@@ -111,8 +114,7 @@ const startServer = async () => {
 };
 
 const gracefulShutdown = async (signal) => {
-  console.log(`
-Received ${signal}. Shutting down gracefully...`);
+  console.log(`\nReceived ${signal}. Shutting down gracefully...`);
   if (server) {
     server.close(async () => {
       console.log('HTTP server closed.');
