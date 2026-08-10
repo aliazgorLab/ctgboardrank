@@ -11,7 +11,7 @@ sys.path.append(os.path.dirname(__file__))
 from database import get_db
 
 POST_URL = "https://sresult.bise-ctg.gov.bd/to_ssc_26_ctg/individual/result.php"
-MAX_WORKERS = 20
+MAX_WORKERS = 50
 BATCH_SIZE = 500
 TIMEOUT = 15
 MAX_RETRIES = 3
