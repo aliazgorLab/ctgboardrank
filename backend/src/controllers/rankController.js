@@ -62,6 +62,7 @@ export const getLeaderboard = async (req, res) => {
 
     // Query sorted top students using compound index { group: 1, gpa: -1, totalMarks: -1, coreSubjectMarks: -1 }
     const students = await Student.find(queryFilter)
+      .select('name roll gpa group totalMarks institution coreSubjectMarks achievement')
       .sort({ gpa: -1, totalMarks: -1, coreSubjectMarks: -1 })
       .skip(skip)
       .limit(limit)
