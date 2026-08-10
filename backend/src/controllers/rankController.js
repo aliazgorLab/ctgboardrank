@@ -10,7 +10,7 @@ export const getStudentRank = async (req, res) => {
     if (student) {
       const effectiveRankTotalMarks = student.rankTotalMarks || (student.totalMarks + 150);
 
-      // 2. Efficient O(log N) rank calculation using countDocuments formula with rankTotalMarks
+      // 2. Efficient O(log N) rank calculation using countDocuments formula
       const higherRankCount = await Student.countDocuments({
         $or: [
           { gpa: { $gt: student.gpa } },
@@ -21,7 +21,7 @@ export const getStudentRank = async (req, res) => {
           {
             gpa: student.gpa,
             rankTotalMarks: effectiveRankTotalMarks,
-            coreSubjectMarks: { $gt: student.coreSubjectMarks },
+            roll: { $lt: student.roll },
           },
         ],
       });
@@ -63,10 +63,10 @@ export const getLeaderboard = async (req, res) => {
       queryFilter.group = reqGroup;
     }
 
-    // Query sorted top students using compound index { gpa: -1, rankTotalMarks: -1, coreSubjectMarks: -1 }
+    // Query sorted top students using compound index { gpa: -1, rankTotalMarks: -1, roll: 1 }
     const students = await Student.find(queryFilter)
       .select('name roll gpa group totalMarks rankTotalMarks institution coreSubjectMarks achievement')
-      .sort({ gpa: -1, rankTotalMarks: -1, coreSubjectMarks: -1 })
+      .sort({ gpa: -1, rankTotalMarks: -1, roll: 1 })
       .skip(skip)
       .limit(limit)
       .lean();

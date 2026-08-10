@@ -59,9 +59,9 @@ const studentSchema = new mongoose.Schema(
 );
 
 // Global ranking compound index
-studentSchema.index({ gpa: -1, rankTotalMarks: -1, coreSubjectMarks: -1 });
+studentSchema.index({ gpa: -1, rankTotalMarks: -1, roll: 1 });
 
 // Group-filtered ranking compound index
-studentSchema.index({ group: 1, gpa: -1, rankTotalMarks: -1, coreSubjectMarks: -1 });
+studentSchema.index({ group: 1, gpa: -1, rankTotalMarks: -1, roll: 1 });
 
 export const Student = mongoose.model('Student', studentSchema);
