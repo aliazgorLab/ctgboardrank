@@ -11,7 +11,7 @@ export function Home() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFetchRank = async (roll: string, reg: string) => {
+  const handleFetchRank = async (roll: string) => {
     setIsLoading(true);
     setError(null);
 
@@ -34,13 +34,13 @@ export function Home() {
       const data = await response.json();
 
       setStudentData({
-        name: data.name || 'SSC Examinee',
+        name: data.name && data.name.trim() !== '' ? data.name : 'Student',
         roll: data.roll || roll,
-        reg: data.registration || data.reg || reg,
+        reg: data.registration || 'N/A',
         gpa: typeof data.gpa === 'number' ? data.gpa : (parseFloat(data.gpa) || 5.0),
         achievement: data.achievement || (Number(data.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(data.gpa).toFixed(2)}`),
         marks: data.totalMarks || data.marks || '1120',
-        rank: data.boardRank || data.rank || '14',
+        rank: data.boardRank || data.rank || '1',
         totalStudents: data.totalStudents || '142,000+',
       });
     } catch (err: any) {

@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { Search, Loader2, Sparkles, ArrowRight, Beaker, Hash, BadgeCheck, AlertCircle } from 'lucide-react';
+import { Search, Loader2, Sparkles, ArrowRight, Beaker, Hash, AlertCircle } from 'lucide-react';
 
 interface RankFormProps {
-  onSubmit: (roll: string, reg: string) => void;
+  onSubmit: (roll: string) => void;
   isLoading: boolean;
   error: string | null;
 }
 
 export const RankForm: React.FC<RankFormProps> = ({ onSubmit, isLoading, error }) => {
   const [roll, setRoll] = useState('');
-  const [reg, setReg] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!roll.trim() || !reg.trim()) return;
-    onSubmit(roll.trim(), reg.trim());
+    if (!roll.trim()) return;
+    onSubmit(roll.trim());
   };
 
   return (
@@ -41,14 +40,14 @@ export const RankForm: React.FC<RankFormProps> = ({ onSubmit, isLoading, error }
               Check Your Merit Standing
             </h2>
             <p className="font-jakarta text-sm sm:text-base text-slate-500 font-medium">
-              Enter your SSC credentials below.
+              Enter your SSC Roll Number below.
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Input 1: Roll Number */}
+            {/* Input: Roll Number */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
                 <Hash className="w-5 h-5" />
@@ -66,33 +65,11 @@ export const RankForm: React.FC<RankFormProps> = ({ onSubmit, isLoading, error }
                 htmlFor="rollNumber"
                 className="absolute text-xs font-semibold text-slate-500 duration-200 transform -translate-y-2.5 scale-90 top-4 z-10 origin-[0] left-11 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-90 peer-focus:-translate-y-2.5 peer-focus:text-indigo-600 pointer-events-none"
               >
-                SSC Roll Number (e.g. 102938)
+                SSC Roll Number (e.g. 132254)
               </label>
             </div>
 
-            {/* Input 2: Registration Number */}
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600 transition-colors">
-                <BadgeCheck className="w-5 h-5" />
-              </div>
-              <input
-                type="text"
-                id="regNumber"
-                required
-                value={reg}
-                onChange={(e) => setReg(e.target.value)}
-                placeholder=" "
-                className="peer w-full pl-11 pr-4 pt-5 pb-2 text-sm font-semibold text-slate-900 bg-slate-50/60 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition-all duration-200"
-              />
-              <label
-                htmlFor="regNumber"
-                className="absolute text-xs font-semibold text-slate-500 duration-200 transform -translate-y-2.5 scale-90 top-4 z-10 origin-[0] left-11 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-90 peer-focus:-translate-y-2.5 peer-focus:text-indigo-600 pointer-events-none"
-              >
-                Registration Number (e.g. 2110482910)
-              </label>
-            </div>
-
-            {/* Subtle Error Message Display (e.g. 404 Not Found) */}
+            {/* Error Message Display */}
             {error && (
               <div className="p-4 rounded-2xl bg-red-50/90 border border-red-200 text-red-800 text-xs font-semibold flex items-center gap-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -103,7 +80,7 @@ export const RankForm: React.FC<RankFormProps> = ({ onSubmit, isLoading, error }
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={isLoading || !roll.trim() || !reg.trim()}
+              disabled={isLoading || !roll.trim()}
               className="font-outfit font-bold w-full py-4 text-base text-white bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 rounded-2xl shadow-md hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 flex items-center justify-center gap-2.5 cursor-pointer disabled:cursor-not-allowed"
             >
               {isLoading ? (
@@ -114,7 +91,7 @@ export const RankForm: React.FC<RankFormProps> = ({ onSubmit, isLoading, error }
               ) : (
                 <>
                   <Search className="w-5 h-5 text-indigo-400" />
-                  <span>Calculate Exact Rank</span>
+                  <span>Check Result</span>
                 </>
               )}
             </button>

@@ -84,10 +84,10 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
           </div>
           <div>
             <span className="text-[11px] font-semibold text-slate-400 block uppercase tracking-wider">
-              Roll & Reg
+              Roll Number
             </span>
             <span className="font-mono font-bold text-sm text-slate-800">
-              {data.roll} / {data.reg.length > 8 ? `${data.reg.substring(0, 7)}...` : data.reg}
+              {data.roll} {data.reg && data.reg !== 'N/A' ? `/ ${data.reg}` : ''}
             </span>
           </div>
         </div>
