@@ -8,17 +8,19 @@ export const getStudentRank = async (req, res) => {
     const student = await Student.findOne({ roll: String(roll) }).lean();
 
     if (student) {
-      // 2. Efficient O(log N) rank calculation using countDocuments formula
+      const effectiveRankTotalMarks = student.rankTotalMarks || (student.totalMarks + 150);
+
+      // 2. Efficient O(log N) rank calculation using countDocuments formula with rankTotalMarks
       const higherRankCount = await Student.countDocuments({
         $or: [
           { gpa: { $gt: student.gpa } },
           {
             gpa: student.gpa,
-            totalMarks: { $gt: student.totalMarks },
+            rankTotalMarks: { $gt: effectiveRankTotalMarks },
           },
           {
             gpa: student.gpa,
-            totalMarks: student.totalMarks,
+            rankTotalMarks: effectiveRankTotalMarks,
             coreSubjectMarks: { $gt: student.coreSubjectMarks },
           },
         ],
@@ -31,11 +33,12 @@ export const getStudentRank = async (req, res) => {
         gpa: Number(student.gpa),
         achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
         totalMarks: student.totalMarks,
+        rankTotalMarks: effectiveRankTotalMarks,
         coreSubjectMarks: student.coreSubjectMarks,
         group: student.group || 'Science',
         institution: student.institution || 'Chittagong Education Board',
         boardRank: higherRankCount + 1,
-        totalStudents: '142,000+',
+        totalStudents: '126,914',
       });
     }
 
@@ -50,7 +53,7 @@ const ALLOWED_GROUPS = ['Science', 'Humanities', 'Business Studies'];
 
 export const getLeaderboard = async (req, res) => {
   try {
-    const limit = Math.max(1, parseInt(req.query.limit, 10) || 100);
+    const limit = Math.min(300, Math.max(1, parseInt(req.query.limit, 10) || 300));
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const skip = (page - 1) * limit;
     const { group: reqGroup } = req.query;
@@ -60,10 +63,10 @@ export const getLeaderboard = async (req, res) => {
       queryFilter.group = reqGroup;
     }
 
-    // Query sorted top students using compound index { group: 1, gpa: -1, totalMarks: -1, coreSubjectMarks: -1 }
+    // Query sorted top students using compound index { gpa: -1, rankTotalMarks: -1, coreSubjectMarks: -1 }
     const students = await Student.find(queryFilter)
-      .select('name roll gpa group totalMarks institution coreSubjectMarks achievement')
-      .sort({ gpa: -1, totalMarks: -1, coreSubjectMarks: -1 })
+      .select('name roll gpa group totalMarks rankTotalMarks institution coreSubjectMarks achievement')
+      .sort({ gpa: -1, rankTotalMarks: -1, coreSubjectMarks: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
@@ -76,6 +79,7 @@ export const getLeaderboard = async (req, res) => {
       achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
       group: student.group || 'Science',
       totalMarks: student.totalMarks,
+      rankTotalMarks: student.rankTotalMarks || (student.totalMarks + 150),
       institution: student.institution || 'Chittagong Education Board',
     }));
 

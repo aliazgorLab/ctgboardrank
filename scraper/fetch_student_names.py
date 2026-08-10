@@ -11,8 +11,8 @@ sys.path.append(os.path.dirname(__file__))
 from database import get_db
 
 POST_URL = "https://sresult.bise-ctg.gov.bd/to_ssc_26_ctg/individual/result.php"
-MAX_WORKERS = 30
-BATCH_SIZE = 500
+MAX_WORKERS = 50
+BATCH_SIZE = 1000
 TIMEOUT = 15
 MAX_RETRIES = 3
 
@@ -67,8 +67,8 @@ def run_migration(test_mode=False):
         return
 
     if test_mode:
-        unnamed_docs = unnamed_docs[:10]
-        print(f"\n--- RUNNING 10 TEST ROLLS ---")
+        unnamed_docs = unnamed_docs[:50]
+        print(f"\n--- RUNNING 50 TEST ROLLS ---")
     else:
         print(f"\n--- STARTING FULL MIGRATION RUN ({MAX_WORKERS} WORKERS) ---")
 
@@ -76,7 +76,7 @@ def run_migration(test_mode=False):
 
     logs_dir = os.path.join(os.path.dirname(__file__), "logs")
     os.makedirs(logs_dir, exist_ok=True)
-    failed_log_path = os.path.join(logs_dir, "failed_rolls.txt")
+    failed_log_path = os.path.join(logs_dir, "name_failed.txt")
 
     updated_count = 0
     failed_count = 0
@@ -99,13 +99,13 @@ def run_migration(test_mode=False):
                     )
                 )
                 updated_count += 1
-                if test_mode or idx <= 10 or idx % 200 == 0 or idx == len(rolls):
-                    print(f"[{idx}/{len(rolls)}]\nRoll:\n{roll}\nName:\n{name}\nStatus:\nUPDATED\n")
+                if test_mode or idx <= 50 or idx % 1000 == 0 or idx == len(rolls):
+                    print(f"[{idx}/{len(rolls)}] Roll:{roll} | Name:{name} | UPDATED")
             else:
                 failed_count += 1
                 with open(failed_log_path, "a", encoding="utf-8") as f:
-                    f.write(f"{roll}\n")
-                if test_mode or idx <= 10:
+                    f.write(f"{roll}\tFAILED_FETCH\n")
+                if test_mode or idx <= 50:
                     print(f"[{idx}/{len(rolls)}]\nRoll:\n{roll}\nStatus:\nFAILED_FETCH\n")
 
             # Execute bulk write in batches
@@ -118,15 +118,32 @@ def run_migration(test_mode=False):
     total_named = db["students"].count_documents({"name": {"$ne": ""}})
     remaining_empty = db["students"].count_documents({"name": ""})
 
+    duplicates = list(db["students"].aggregate([
+        {"$group": {"_id": "$roll", "count": {"$sum": 1}}},
+        {"$match": {"count": {"$gt": 1}}}
+    ]))
+
     print("=========================================================")
-    print("SSC 2026 STUDENT NAME MIGRATION BATCH COMPLETE")
+    if test_mode:
+        print("TEST REPORT")
+    else:
+        print("SSC 2026 NAME MIGRATION REPORT")
     print("=========================================================")
+    print(f"Database             : ctgboardrank")
     print(f"Total Students       : {total_in_db}")
-    print(f"Names Updated Batch  : {updated_count}")
-    print(f"Failed Batch Count   : {failed_count}")
-    print(f"Total Named in DB    : {total_named}")
-    print(f"Empty Names Remaining: {remaining_empty}")
+    if test_mode:
+        print(f"Total Tested         : {len(rolls)}")
+        print(f"Names Found          : {updated_count}")
+        print(f"Failed               : {failed_count}")
+        print(f"Empty (in test)      : {failed_count}")
+    else:
+        print(f"Names Added          : {updated_count}")
+        print(f"Failed               : {failed_count}")
+        print(f"Empty Names Remaining: {remaining_empty}")
+        print(f"Duplicate Rolls      : {len(duplicates)}")
     print(f"Time Elapsed         : {elapsed:.2f} seconds")
+    if not test_mode:
+        print(f"Status               : {'READY FOR LEADERBOARD' if remaining_empty == 0 else 'IN PROGRESS'}")
     print("=========================================================")
 
 if __name__ == "__main__":

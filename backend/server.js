@@ -33,7 +33,7 @@ app.use(express.json());
 // Express Rate Limiting for API routes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes window
-  max: 200, // Limit each IP to 200 requests per 15 minutes
+  max: 300, // Limit each IP to 300 requests per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests from this IP. Please try again after 15 minutes.' },
@@ -63,18 +63,17 @@ app.get('/', (req, res) => {
   });
 });
 
-// Mount Rank Routes
+// Mount Rank & Student Routes
 app.use('/api/rank', rankRoutes);
+app.use('/api/student', rankRoutes);
 
 // -----------------------------------------------------------------------------
 // Production Error & 404 Middlewares
 // -----------------------------------------------------------------------------
-// 404 Fallback
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint not found.' });
 });
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err);
   const statusCode = err.status || err.statusCode || 500;
@@ -86,16 +85,18 @@ app.use((err, req, res, next) => {
 });
 
 // -----------------------------------------------------------------------------
-// Server Initialization
+// Server Initialization & Graceful Shutdown
 // -----------------------------------------------------------------------------
+let server;
+
 const startServer = async () => {
   try {
     await connectDB();
   } catch (err) {
-    console.warn('MongoDB connection failed. Running server with in-memory fallback.');
+    console.warn('MongoDB connection warning:', err.message);
   }
 
-  const server = app.listen(PORT, () => {
+  server = app.listen(PORT, () => {
     console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
   });
 
@@ -109,6 +110,26 @@ const startServer = async () => {
   });
 };
 
-startServer();
-// Server ready for production traffic
+const gracefulShutdown = async (signal) => {
+  console.log(`
+Received ${signal}. Shutting down gracefully...`);
+  if (server) {
+    server.close(async () => {
+      console.log('HTTP server closed.');
+      try {
+        await mongoose.connection.close();
+        console.log('MongoDB connection closed.');
+      } catch (err) {
+        console.error('Error closing MongoDB connection:', err);
+      }
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+};
 
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
+startServer();

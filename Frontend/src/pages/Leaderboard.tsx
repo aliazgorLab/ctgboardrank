@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Award, Filter, Loader2, School, AlertTriangle } from 'lucide-react';
+import { Trophy, Filter, Loader2, School, AlertTriangle, ExternalLink, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { ScholarshipOfferCard } from '../components/ScholarshipOfferCard';
 
 export interface LeaderboardStudent {
@@ -10,6 +11,7 @@ export interface LeaderboardStudent {
   achievement?: string;
   group: string;
   totalMarks: number;
+  rankTotalMarks?: number;
   institution: string;
 }
 
@@ -21,14 +23,14 @@ export const Leaderboard: React.FC = () => {
   const [selectedGroup, setSelectedGroup] = useState<GroupOption>('All');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Clear any potential browser storage cache
     try {
       localStorage.removeItem('leaderboardCache');
       sessionStorage.removeItem('leaderboardCache');
     } catch {
-      // Ignore storage errors
+      // Ignore
     }
 
     const fetchLeaderboard = async () => {
@@ -36,7 +38,7 @@ export const Leaderboard: React.FC = () => {
       setError(null);
       try {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        let url = `${baseUrl}/api/rank/leaderboard?limit=100`;
+        let url = `${baseUrl}/api/rank/leaderboard?limit=300`;
         if (selectedGroup !== 'All') {
           url += `&group=${encodeURIComponent(selectedGroup)}`;
         }
@@ -47,8 +49,6 @@ export const Leaderboard: React.FC = () => {
         }
 
         const data = await res.json();
-        console.log('Leaderboard API response:', data);
-
         if (Array.isArray(data) && data.length > 0) {
           setStudents(data);
         } else {
@@ -67,18 +67,13 @@ export const Leaderboard: React.FC = () => {
     fetchLeaderboard();
   }, [selectedGroup]);
 
-  const getGroupBadgeColor = (group: string) => {
-    switch (group) {
-      case 'Science':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
-      case 'Humanities':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
-      case 'Business Studies':
-        return 'bg-amber-50 text-amber-800 border-amber-200';
-      default:
-        return 'bg-slate-100 text-slate-700 border-slate-200';
-    }
+  const handleViewDetails = (roll: string) => {
+    navigate(`/?roll=${encodeURIComponent(roll)}`);
   };
+
+  const top1 = students.find((s) => s.rank === 1);
+  const top2 = students.find((s) => s.rank === 2);
+  const top3 = students.find((s) => s.rank === 3);
 
   return (
     <div id="leaderboard" className="min-h-[calc(100vh-140px)] py-10 sm:py-14 lg:py-16 bg-slate-50 font-jakarta relative overflow-hidden flex flex-col justify-center">
@@ -91,13 +86,13 @@ export const Leaderboard: React.FC = () => {
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold tracking-wide">
-            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Merit Standings
+            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Top 300 Standings
           </div>
           <h1 className="font-outfit font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight">
             SSC '26 Official Board Leaderboard
           </h1>
           <p className="font-jakarta text-base text-slate-600 font-medium">
-            Explore the top merit examinees across Chittagong Board ranked by GPA, Total Marks & Core STEM Marks.
+            Top 300 examinees across Chittagong Board ranked by GPA, Adjusted Total Marks (+150), and Core Subject Marks.
           </p>
         </div>
 
@@ -122,11 +117,120 @@ export const Leaderboard: React.FC = () => {
           })}
         </div>
 
+        {/* Top 3 Podium Display */}
+        {!isLoading && students.length >= 3 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto pt-2">
+            
+            {/* 🥈 2nd Place */}
+            {top2 && (
+              <div className="bg-white rounded-2xl border-2 border-slate-200 p-5 shadow-lg flex flex-col justify-between hover:border-slate-400 transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-black font-outfit text-slate-700 flex items-center gap-1.5">
+                      🥈 2nd
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold font-mono">
+                      GPA {top2.gpa.toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-outfit font-bold text-lg text-slate-900 line-clamp-1">{top2.name}</h3>
+                    <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{top2.institution}</p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-medium">Rank Total Marks</span>
+                    <span className="text-lg font-black font-outfit text-slate-900">
+                      {top2.rankTotalMarks || top2.totalMarks + 150}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleViewDetails(top2.roll)}
+                  className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-outfit text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span>View Details</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* 🥇 1st Place */}
+            {top1 && (
+              <div className="bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-white rounded-2xl border-2 border-amber-400 p-6 shadow-xl flex flex-col justify-between relative -translate-y-2 md:-translate-y-3 hover:border-amber-500 transition-all">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
+                  Top Board Merit
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-3xl font-black font-outfit text-amber-700 flex items-center gap-1.5">
+                      🥇 1st
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-extrabold font-mono shadow-sm">
+                      GPA {top1.gpa.toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-outfit font-black text-xl text-slate-900 line-clamp-1">{top1.name}</h3>
+                    <p className="text-xs text-slate-600 font-medium line-clamp-1 mt-0.5">{top1.institution}</p>
+                  </div>
+                  <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between">
+                    <span className="text-xs text-amber-900 font-semibold">Rank Total Marks</span>
+                    <span className="text-2xl font-black font-outfit text-amber-700">
+                      {top1.rankTotalMarks || top1.totalMarks + 150}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleViewDetails(top1.roll)}
+                  className="mt-4 w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-outfit text-xs font-black flex items-center justify-center gap-1 shadow-md shadow-amber-500/20 transition-all"
+                >
+                  <span>View Details</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* 🥉 3rd Place */}
+            {top3 && (
+              <div className="bg-white rounded-2xl border-2 border-amber-700/30 p-5 shadow-lg flex flex-col justify-between hover:border-amber-700/60 transition-all">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-black font-outfit text-amber-800 flex items-center gap-1.5">
+                      🥉 3rd
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold font-mono">
+                      GPA {top3.gpa.toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-outfit font-bold text-lg text-slate-900 line-clamp-1">{top3.name}</h3>
+                    <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{top3.institution}</p>
+                  </div>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-medium">Rank Total Marks</span>
+                    <span className="text-lg font-black font-outfit text-amber-900">
+                      {top3.rankTotalMarks || top3.totalMarks + 150}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleViewDetails(top3.roll)}
+                  className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-outfit text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                >
+                  <span>View Details</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+          </div>
+        )}
+
         {/* Disclaimer Card */}
         <div className="max-w-4xl mx-auto bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-amber-900 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs sm:text-sm font-medium leading-relaxed">
-            <strong className="font-bold">Disclaimer:</strong> This ranking is independently calculated based on publicly available Chittagong Board EIIN result metrics. Actual official board positions may vary.
+            <strong className="font-bold">Disclaimer:</strong> Rankings are generated using +150 adjusted total marks based on publicly available Chittagong Board EIIN result metrics. Official board positions may vary.
           </p>
         </div>
 
@@ -141,12 +245,11 @@ export const Leaderboard: React.FC = () => {
               <thead className="sticky top-0 z-10 bg-slate-900 text-white font-outfit text-xs sm:text-sm font-bold shadow-sm uppercase tracking-wider">
                 <tr>
                   <th className="py-4 px-3 sm:px-4 text-center w-16 sm:w-20">Rank</th>
-                  <th className="py-4 px-4 sm:px-6">Name</th>
-                  <th className="py-4 px-3 sm:px-4 text-center">Roll</th>
-                  <th className="py-4 px-3 sm:px-4 text-center">GPA</th>
-                  <th className="py-4 px-3 sm:px-4 text-center">Group</th>
-                  <th className="py-4 px-3 sm:px-4 text-right">Total</th>
+                  <th className="py-4 px-4 sm:px-6">Student</th>
                   <th className="py-4 px-4 sm:px-6 hidden md:table-cell">Institution</th>
+                  <th className="py-4 px-3 sm:px-4 text-center">GPA</th>
+                  <th className="py-4 px-3 sm:px-4 text-right">Rank Total Marks</th>
+                  <th className="py-4 px-3 sm:px-4 text-center">Action</th>
                 </tr>
               </thead>
 
@@ -154,16 +257,16 @@ export const Leaderboard: React.FC = () => {
               <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-medium">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-16 text-center text-slate-500">
+                    <td colSpan={6} className="py-16 text-center text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-3">
                         <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                        <span className="font-outfit font-semibold text-sm">Fetching live leaderboard rankings...</span>
+                        <span className="font-outfit font-semibold text-sm">Fetching live Top 300 leaderboard rankings...</span>
                       </div>
                     </td>
                   </tr>
                 ) : error || students.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-slate-500 font-medium">
+                    <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
                       {error || 'No leaderboard data available'}
                     </td>
                   </tr>
@@ -172,13 +275,14 @@ export const Leaderboard: React.FC = () => {
                     const isRank1 = student.rank === 1;
                     const isRank2 = student.rank === 2;
                     const isRank3 = student.rank === 3;
+                    const displayRankTotal = student.rankTotalMarks || (student.totalMarks + 150);
 
                     return (
                       <tr
                         key={`${student.roll}-${student.rank}`}
                         className={`transition-colors hover:bg-slate-50/80 ${
                           isRank1
-                            ? 'bg-amber-500/10 border-l-4 border-amber-500'
+                            ? 'bg-amber-500/10 border-l-4 border-amber-500 font-semibold'
                             : isRank2
                             ? 'bg-slate-100/70 border-l-4 border-slate-400'
                             : isRank3
@@ -189,9 +293,6 @@ export const Leaderboard: React.FC = () => {
                         {/* 1. Rank Column */}
                         <td className="py-4 px-3 sm:px-4 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            {isRank1 && <Trophy className="w-4 h-4 text-amber-500 shrink-0" />}
-                            {isRank2 && <Award className="w-4 h-4 text-slate-400 shrink-0" />}
-                            {isRank3 && <Award className="w-4 h-4 text-amber-700 shrink-0" />}
                             <span
                               className={`font-outfit font-extrabold ${
                                 isRank1
@@ -203,16 +304,19 @@ export const Leaderboard: React.FC = () => {
                                   : 'text-slate-600'
                               }`}
                             >
-                              #{student.rank}
+                              {isRank1 ? '🥇 1st' : isRank2 ? '🥈 2nd' : isRank3 ? '🥉 3rd' : `#${student.rank}`}
                             </span>
                           </div>
                         </td>
 
-                        {/* 2. Name Column */}
+                        {/* 2. Student Name Column */}
                         <td className="py-4 px-4 sm:px-6">
                           <div className="flex flex-col">
                             <span className="font-outfit font-bold text-slate-900 sm:text-base">
                               {student.name && student.name.trim() !== '' ? student.name : 'N/A'}
+                            </span>
+                            <span className="text-[11px] text-slate-500 font-mono">
+                              Roll: {student.roll} • {student.group || 'Science'}
                             </span>
                             <span className="md:hidden text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <School className="w-3 h-3 text-slate-400 shrink-0" />
@@ -221,9 +325,9 @@ export const Leaderboard: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* 3. Roll Column */}
-                        <td className="py-4 px-3 sm:px-4 text-center font-mono font-semibold text-slate-600">
-                          {student.roll}
+                        {/* 3. Institution Column (Desktop) */}
+                        <td className="py-4 px-4 sm:px-6 hidden md:table-cell text-slate-600 text-xs font-semibold max-w-[220px] truncate">
+                          {student.institution || 'Chittagong Education Board'}
                         </td>
 
                         {/* 4. GPA Column */}
@@ -233,21 +337,20 @@ export const Leaderboard: React.FC = () => {
                           </span>
                         </td>
 
-                        {/* 5. Group Column */}
-                        <td className="py-4 px-3 sm:px-4 text-center">
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full border text-xs font-bold whitespace-nowrap ${getGroupBadgeColor(student.group)}`}>
-                            {student.group || 'Science'}
-                          </span>
-                        </td>
-
-                        {/* 6. Total Marks Column */}
+                        {/* 5. Rank Total Marks Column */}
                         <td className="py-4 px-3 sm:px-4 text-right font-outfit font-extrabold text-slate-900 text-base">
-                          {student.totalMarks}
+                          {displayRankTotal}
                         </td>
 
-                        {/* 7. Institution Column (Desktop) */}
-                        <td className="py-4 px-4 sm:px-6 hidden md:table-cell text-slate-600 text-xs font-semibold max-w-[220px] truncate">
-                          {student.institution || 'Chittagong Education Board'}
+                        {/* 6. Action Column */}
+                        <td className="py-4 px-3 sm:px-4 text-center">
+                          <button
+                            onClick={() => handleViewDetails(student.roll)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-outfit text-xs font-bold transition-all shadow-sm cursor-pointer whitespace-nowrap"
+                          >
+                            <span>View Details</span>
+                            <ExternalLink className="w-3 h-3 text-amber-400" />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -260,7 +363,7 @@ export const Leaderboard: React.FC = () => {
           {/* Table Footer Stats */}
           <div className="bg-slate-50 border-t border-slate-100 p-4 sm:px-6 flex items-center justify-between text-xs text-slate-500 font-semibold">
             <span>Showing top {students.length} merit examinees</span>
-            <span className="text-indigo-600 font-bold">Chittagong Board Official Dataset</span>
+            <span className="text-indigo-600 font-bold">Chittagong Board Official Dataset (300 Max)</span>
           </div>
 
         </div>

@@ -1,18 +1,29 @@
 # Environment variables
 .env
 .env.local
-.env.production
 *.env
+!.env.production
 
 # Dependencies & Build outputs
 node_modules/
 dist/
 build/
 
-# Python
+# Backups & Scraper temporary files
+backup_before_full_scrape/
+backup_current_101k/
+backup_before_name_update/
+students_backup_before_150_marks_update.json
+scraper/raw_rolls.json
+scraper/student_details.json
+scraper/logs/
+*.json.bak
+students_backup.json
+institutions_backup.json
+
+# Python & Runtime
 __pycache__/
 *.pyc
-scraper/logs/
 cookies.txt
 test_output.html
 test_output.json
