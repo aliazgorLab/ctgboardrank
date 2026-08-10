@@ -12,7 +12,8 @@ export const connectDB = async () => {
   try {
     const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/ctgboardrank';
     const conn = await mongoose.connect(mongoUri, { dbName: 'ctgboardrank' });
-    console.log(`MongoDB Connected: ${conn.connection.host} [dbName: ctgboardrank]`);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`MongoDB Database: ctgboardrank`);
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`);
     throw error;
