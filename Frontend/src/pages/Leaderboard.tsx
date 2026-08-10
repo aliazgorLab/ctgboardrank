@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Filter, Loader2, School, AlertTriangle, ExternalLink, ChevronRight } from 'lucide-react';
+import { Trophy, Filter, Loader2, School, AlertTriangle, ExternalLink, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ScholarshipOfferCard } from '../components/ScholarshipOfferCard';
 
@@ -18,11 +18,14 @@ export interface LeaderboardStudent {
 const GROUPS = ['All', 'Science', 'Humanities', 'Business Studies'] as const;
 type GroupOption = (typeof GROUPS)[number];
 
+const ITEMS_PER_PAGE = 100;
+
 export const Leaderboard: React.FC = () => {
   const [students, setStudents] = useState<LeaderboardStudent[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupOption>('All');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +41,7 @@ export const Leaderboard: React.FC = () => {
       setError(null);
       try {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        let url = `${baseUrl}/api/rank/leaderboard?limit=300`;
+        let url = `${baseUrl}/api/rank/leaderboard?limit=1000`;
         if (selectedGroup !== 'All') {
           url += `&group=${encodeURIComponent(selectedGroup)}`;
         }
@@ -65,6 +68,7 @@ export const Leaderboard: React.FC = () => {
     };
 
     fetchLeaderboard();
+    setCurrentPage(1);
   }, [selectedGroup]);
 
   const handleViewDetails = (roll: string) => {
@@ -74,6 +78,20 @@ export const Leaderboard: React.FC = () => {
   const top1 = students.find((s) => s.rank === 1);
   const top2 = students.find((s) => s.rank === 2);
   const top3 = students.find((s) => s.rank === 3);
+
+  const totalPages = Math.max(1, Math.ceil(students.length / ITEMS_PER_PAGE));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedStudents = students.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+      const tableElem = document.getElementById('leaderboard-table-card');
+      if (tableElem) {
+        tableElem.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <div id="leaderboard" className="min-h-[calc(100vh-140px)] py-10 sm:py-14 lg:py-16 bg-slate-50 font-jakarta relative overflow-hidden flex flex-col justify-center">
@@ -86,50 +104,52 @@ export const Leaderboard: React.FC = () => {
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold tracking-wide">
-            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Top 300 Standings
+            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Top 1000 Standings
           </div>
           <h1 className="font-outfit font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight">
             SSC '26 Official Board Leaderboard
           </h1>
           <p className="font-jakarta text-base text-slate-600 font-medium">
-            Top 300 examinees across Chittagong Board ranked by GPA, Adjusted Total Marks (+150), and Core Subject Marks.
+            Top 1000 examinees across Chittagong Board ranked by Adjusted Total Marks (max 1300), GPA, Core Subject Marks, and Roll.
           </p>
         </div>
 
         {/* Group Filter Tabs */}
         <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl mx-auto">
-          {GROUPS.map((group) => {
-            const isSelected = selectedGroup === group;
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-500 mr-1">
+            <Filter className="w-3.5 h-3.5 text-slate-400" /> Group Filter:
+          </div>
+          {GROUPS.map((grp) => {
+            const isSelected = selectedGroup === grp;
             return (
               <button
-                key={group}
-                onClick={() => setSelectedGroup(group)}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold font-outfit transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                key={grp}
+                onClick={() => setSelectedGroup(grp)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer ${
                   isSelected
-                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20 scale-105'
-                    : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/10'
+                    : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
                 }`}
               >
-                {isSelected && <Filter className="w-3.5 h-3.5 text-amber-400" />}
-                <span>{group}</span>
+                {grp === 'All' ? 'All Groups' : grp}
               </button>
             );
           })}
         </div>
 
         {/* Top 3 Podium Display */}
-        {!isLoading && students.length >= 3 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto pt-2">
+        {!isLoading && !error && students.length >= 3 && (
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 font-jakarta">
             
             {/* 🥈 2nd Place */}
             {top2 && (
-              <div className="bg-white rounded-2xl border-2 border-slate-200 p-5 shadow-lg flex flex-col justify-between hover:border-slate-400 transition-all">
+              <div className="bg-white rounded-2xl border-2 border-slate-300 p-5 shadow-lg flex flex-col justify-between hover:border-slate-400 transition-all md:translate-y-2">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-black font-outfit text-slate-700 flex items-center gap-1.5">
                       🥈 2nd
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-bold font-mono">
+                    <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 border border-slate-200 text-xs font-bold font-mono">
                       GPA {top2.gpa.toFixed(2)}
                     </span>
                   </div>
@@ -156,16 +176,16 @@ export const Leaderboard: React.FC = () => {
 
             {/* 🥇 1st Place */}
             {top1 && (
-              <div className="bg-gradient-to-b from-amber-500/10 via-amber-500/5 to-white rounded-2xl border-2 border-amber-400 p-6 shadow-xl flex flex-col justify-between relative -translate-y-2 md:-translate-y-3 hover:border-amber-500 transition-all">
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black uppercase tracking-wider shadow-sm">
-                  Top Board Merit
+              <div className="bg-gradient-to-b from-amber-500/10 via-white to-white rounded-2xl border-2 border-amber-400 p-6 shadow-xl shadow-amber-500/10 flex flex-col justify-between transform md:-translate-y-2 relative">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-400 text-slate-950 font-outfit text-[11px] font-black uppercase tracking-wider shadow-md">
+                  Board Rank #1
                 </div>
-                <div className="space-y-3">
+                <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-3xl font-black font-outfit text-amber-700 flex items-center gap-1.5">
+                    <span className="text-3xl font-black font-outfit text-amber-600 flex items-center gap-1.5">
                       🥇 1st
                     </span>
-                    <span className="px-3 py-1 rounded-full bg-amber-500 text-white text-xs font-extrabold font-mono shadow-sm">
+                    <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black font-mono">
                       GPA {top1.gpa.toFixed(2)}
                     </span>
                   </div>
@@ -173,16 +193,16 @@ export const Leaderboard: React.FC = () => {
                     <h3 className="font-outfit font-black text-xl text-slate-900 line-clamp-1">{top1.name}</h3>
                     <p className="text-xs text-slate-600 font-medium line-clamp-1 mt-0.5">{top1.institution}</p>
                   </div>
-                  <div className="pt-2 border-t border-amber-200/60 flex items-center justify-between">
-                    <span className="text-xs text-amber-900 font-semibold">Rank Total Marks</span>
-                    <span className="text-2xl font-black font-outfit text-amber-700">
+                  <div className="pt-2 border-t border-amber-100 flex items-center justify-between">
+                    <span className="text-xs text-slate-500 font-semibold">Rank Total Marks</span>
+                    <span className="text-xl font-black font-outfit text-amber-600">
                       {top1.rankTotalMarks || top1.totalMarks + 150}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleViewDetails(top1.roll)}
-                  className="mt-4 w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-outfit text-xs font-black flex items-center justify-center gap-1 shadow-md shadow-amber-500/20 transition-all"
+                  className="mt-4 w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-outfit text-xs font-black flex items-center justify-center gap-1 shadow-md shadow-amber-500/20 transition-all cursor-pointer"
                 >
                   <span>View Details</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -192,7 +212,7 @@ export const Leaderboard: React.FC = () => {
 
             {/* 🥉 3rd Place */}
             {top3 && (
-              <div className="bg-white rounded-2xl border-2 border-amber-700/30 p-5 shadow-lg flex flex-col justify-between hover:border-amber-700/60 transition-all">
+              <div className="bg-white rounded-2xl border-2 border-amber-700/30 p-5 shadow-lg flex flex-col justify-between hover:border-amber-700/60 transition-all md:translate-y-2">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-2xl font-black font-outfit text-amber-800 flex items-center gap-1.5">
@@ -215,7 +235,7 @@ export const Leaderboard: React.FC = () => {
                 </div>
                 <button
                   onClick={() => handleViewDetails(top3.roll)}
-                  className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-outfit text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-outfit text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                 >
                   <span>View Details</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -230,15 +250,15 @@ export const Leaderboard: React.FC = () => {
         <div className="max-w-4xl mx-auto bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-amber-900 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs sm:text-sm font-medium leading-relaxed">
-            <strong className="font-bold">Disclaimer:</strong> Rankings are generated using +150 adjusted total marks based on publicly available Chittagong Board EIIN result metrics. Official board positions may vary.
+            <strong className="font-bold">Disclaimer:</strong> Rankings are generated using +150 adjusted total marks (max 1300) based on publicly available Chittagong Board EIIN result metrics. Official board positions may vary.
           </p>
         </div>
 
         {/* Leaderboard Table Card Container */}
-        <div className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/60 overflow-hidden space-y-0">
+        <div id="leaderboard-table-card" className="max-w-4xl mx-auto bg-white rounded-3xl border border-slate-200/90 shadow-xl shadow-slate-200/60 overflow-hidden space-y-0">
           
           {/* Scrollable Table Box */}
-          <div className="max-h-[600px] overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+          <div className="max-h-[650px] overflow-y-auto overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
             <table className="w-full text-left border-collapse min-w-[640px] sm:min-w-full">
               
               {/* Sticky Dark Table Header */}
@@ -254,24 +274,24 @@ export const Leaderboard: React.FC = () => {
               </thead>
 
               {/* Table Body */}
-              <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-medium">
+              <tbody className="divide-y divide-slate-100 font-jakarta text-sm">
                 {isLoading ? (
                   <tr>
                     <td colSpan={6} className="py-16 text-center text-slate-500">
                       <div className="flex flex-col items-center justify-center gap-3">
-                        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                        <span className="font-outfit font-semibold text-sm">Fetching live Top 300 leaderboard rankings...</span>
+                        <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+                        <span className="font-outfit font-semibold text-slate-700">Loading Top 1000 Leaderboard...</span>
                       </div>
                     </td>
                   </tr>
                 ) : error || students.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500 font-medium">
+                    <td colSpan={6} className="py-16 text-center text-slate-500 font-medium">
                       {error || 'No leaderboard data available'}
                     </td>
                   </tr>
                 ) : (
-                  students.map((student) => {
+                  paginatedStudents.map((student) => {
                     const isRank1 = student.rank === 1;
                     const isRank2 = student.rank === 2;
                     const isRank3 = student.rank === 3;
@@ -360,11 +380,54 @@ export const Leaderboard: React.FC = () => {
             </table>
           </div>
 
-          {/* Table Footer Stats */}
-          <div className="bg-slate-50 border-t border-slate-100 p-4 sm:px-6 flex items-center justify-between text-xs text-slate-500 font-semibold">
-            <span>Showing top {students.length} merit examinees</span>
-            <span className="text-indigo-600 font-bold">Chittagong Board Official Dataset (300 Max)</span>
-          </div>
+          {/* Pagination & Table Footer Stats */}
+          {!isLoading && !error && students.length > 0 && (
+            <div className="bg-slate-50 border-t border-slate-200 p-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-semibold">
+              <div className="text-slate-600">
+                Showing <span className="font-bold text-slate-900">{startIndex + 1}</span>–<span className="font-bold text-slate-900">{Math.min(startIndex + ITEMS_PER_PAGE, students.length)}</span> of <span className="font-bold text-slate-900">{students.length}</span> Top Merit Examinees
+              </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => {
+                    const isCurrent = pg === currentPage;
+                    return (
+                      <button
+                        key={pg}
+                        onClick={() => handlePageChange(pg)}
+                        className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isCurrent
+                            ? 'bg-slate-900 text-white shadow-sm'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        {pg}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
         </div>
 

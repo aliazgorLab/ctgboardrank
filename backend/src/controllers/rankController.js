@@ -8,19 +8,25 @@ export const getStudentRank = async (req, res) => {
     const student = await Student.findOne({ roll: String(roll) }).lean();
 
     if (student) {
-      const effectiveRankTotalMarks = student.rankTotalMarks || (student.totalMarks + 150);
+      const effectiveRankTotalMarks = Math.min(1300, student.rankTotalMarks || (student.totalMarks + 150));
 
       // 2. Efficient O(log N) rank calculation using countDocuments formula
       const higherRankCount = await Student.countDocuments({
         $or: [
-          { gpa: { $gt: student.gpa } },
+          { rankTotalMarks: { $gt: effectiveRankTotalMarks } },
           {
-            gpa: student.gpa,
-            rankTotalMarks: { $gt: effectiveRankTotalMarks },
+            rankTotalMarks: effectiveRankTotalMarks,
+            gpa: { $gt: student.gpa },
           },
           {
-            gpa: student.gpa,
             rankTotalMarks: effectiveRankTotalMarks,
+            gpa: student.gpa,
+            coreSubjectMarks: { $gt: student.coreSubjectMarks },
+          },
+          {
+            rankTotalMarks: effectiveRankTotalMarks,
+            gpa: student.gpa,
+            coreSubjectMarks: student.coreSubjectMarks,
             roll: { $lt: student.roll },
           },
         ],
@@ -53,7 +59,7 @@ const ALLOWED_GROUPS = ['Science', 'Humanities', 'Business Studies'];
 
 export const getLeaderboard = async (req, res) => {
   try {
-    const limit = Math.min(300, Math.max(1, parseInt(req.query.limit, 10) || 300));
+    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit, 10) || 1000));
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const skip = (page - 1) * limit;
     const { group: reqGroup } = req.query;
@@ -63,10 +69,10 @@ export const getLeaderboard = async (req, res) => {
       queryFilter.group = reqGroup;
     }
 
-    // Query sorted top students using compound index { gpa: -1, rankTotalMarks: -1, roll: 1 }
+    // Query sorted top students up to 1000 using compound index
     const students = await Student.find(queryFilter)
       .select('name roll gpa group totalMarks rankTotalMarks institution coreSubjectMarks achievement')
-      .sort({ gpa: -1, rankTotalMarks: -1, roll: 1 })
+      .sort({ rankTotalMarks: -1, gpa: -1, coreSubjectMarks: -1, roll: 1 })
       .skip(skip)
       .limit(limit)
       .lean();
@@ -79,7 +85,7 @@ export const getLeaderboard = async (req, res) => {
       achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
       group: student.group || 'Science',
       totalMarks: student.totalMarks,
-      rankTotalMarks: student.rankTotalMarks || (student.totalMarks + 150),
+      rankTotalMarks: Math.min(1300, student.rankTotalMarks || (student.totalMarks + 150)),
       institution: student.institution || 'Chittagong Education Board',
     }));
 
