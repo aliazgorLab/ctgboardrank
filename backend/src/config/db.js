@@ -10,11 +10,11 @@ try {
 
 export const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/ctgboardrank');
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/ctgboardrank';
+    const conn = await mongoose.connect(mongoUri, { dbName: 'ctgboardrank' });
+    console.log(`MongoDB Connected: ${conn.connection.host} [dbName: ctgboardrank]`);
   } catch (error) {
     console.error(`MongoDB Connection Error: ${error.message}`);
     throw error;
   }
 };
-
