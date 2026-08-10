@@ -1,294 +1,186 @@
 import os
-import re
+import csv
+import sys
 import time
-import random
-from bs4 import BeautifulSoup
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from parser import parse_student_results
+from database import get_db, upsert_institution, upsert_students
 
-from db_handler import upsert_student
+TARGET_URL = "https://sresult.bise-ctg.gov.bd/to_ssc_26_ctg/resultm.php"
+EIIN_CSV_PATH = os.path.join(os.path.dirname(__file__), "eiin_list.csv")
+LOG_DIR = os.path.join(os.path.dirname(__file__), "logs")
+FAILED_LOG_PATH = os.path.join(LOG_DIR, "failed_eiin.txt")
 
-# Configuration Options
-HEADLESS_MODE = True  # Set to False if you want to watch the Chrome browser UI
-TARGET_URL = "http://www.educationboardresults.gov.bd/"
+TEST_EIINS = ["104245", "103086", "103087", "103088"]
 
-# ---------------------------------------------------------------------------
-# Result Day Placeholder Configurable Selectors & Keywords
-# (Update these constants after inspecting the live result HTML layout)
-# ---------------------------------------------------------------------------
-NAME_LABELS = ["Name of Student", "Student Name", "Name"]
-ROLL_LABELS = ["Roll No", "Roll Number", "Roll"]
-REG_LABELS = ["Reg. No", "Registration No", "Reg No"]
-GPA_LABELS = ["GPA", "Result"]
+MAX_WORKERS = 10
+TIMEOUT_SECONDS = 15
+MAX_RETRIES = 3
 
-# Keywords to match core STEM subjects for tie-breaker calculations
-CORE_SUBJECT_KEYWORDS = [
-    "PHYSICS",
-    "CHEMISTRY",
-    "HIGHER MATHEMATICS",
-    "BIOLOGY",
-    "MATHEMATICS",
-]
-
-# Common Chrome binary locations on Windows
-CHROME_PATHS = [
-    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-    os.path.expanduser(r"~\AppData\Local\Google\Chrome\Application\chrome.exe"),
-]
+lock = threading.Lock()
+completed_count = 0
+failed_eiins = []
 
 
-def find_chrome_binary():
-    """Returns the path to chrome.exe if installed on the system."""
-    for path in CHROME_PATHS:
-        if os.path.exists(path):
-            return path
-    return None
+def ensure_log_dir():
+    """Creates the logs directory if it does not exist."""
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR, exist_ok=True)
 
 
-def init_driver(headless=HEADLESS_MODE):
-    """Initializes and returns a Selenium Chrome WebDriver with options."""
-    options = webdriver.ChromeOptions()
-    if headless:
-        options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
-
-    chrome_path = find_chrome_binary()
-    if chrome_path:
-        options.binary_location = chrome_path
-        print(f"[INFO] Using Chrome binary at: {chrome_path}")
-
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=options)
-    driver.implicitly_wait(8)
-    return driver
-
-
-def solve_math_captcha(driver):
-    """
-    Extracts the math captcha string from the <td> element (e.g. '9 + 2'),
-    evaluates the arithmetic sum, and returns the calculated integer as string.
-    """
-    try:
-        captcha_element = WebDriverWait(driver, 5).until(
-            EC.presence_of_element_located((By.XPATH, "//td[contains(text(), '+')]"))
-        )
-        text = captcha_element.text.strip()
-        
-        # Extract numbers in format: 'X + Y'
-        match = re.search(r'(\d+)\s*\+\s*(\d+)', text)
-        if match:
-            num1, num2 = int(match.group(1)), int(match.group(2))
-            result = num1 + num2
-            print(f"[CAPTCHA] Solved Captcha: {num1} + {num2} = {result}")
-            return str(result)
-        else:
-            print(f"[WARN] Could not parse captcha math expression from text: '{text}'")
-            return None
-    except Exception as e:
-        print(f"[ERROR] Error locating/solving captcha: {e}")
-        return None
+def create_http_session():
+    """Creates a requests.Session with connection pooling and retry strategy."""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=MAX_RETRIES,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+        raise_on_status=False
+    )
+    adapter = HTTPAdapter(
+        max_retries=retry_strategy,
+        pool_connections=MAX_WORKERS,
+        pool_maxsize=MAX_WORKERS * 2
+    )
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+        "Content-Type": "application/x-www-form-urlencoded"
+    })
+    return session
 
 
-def parse_result_page(html, roll="", reg=""):
-    """
-    Parses raw HTML source of official SSC result page to extract student info,
-    GPA, subject-wise marks breakdown, total marks, and core subject marks.
-    
-    Returns a dictionary:
-    {
-        "name": str,
-        "roll": str,
-        "registration": str,
-        "gpa": float,
-        "subjects": dict,
-        "totalMarks": int,
-        "coreSubjectMarks": int
-    }
-    """
-    soup = BeautifulSoup(html, "html.parser")
+def load_eiin_list(full_mode=False):
+    """Loads EIIN numbers from eiin_list.csv or returns test list."""
+    if not full_mode:
+        print("[MODE] Test Mode active. Processing initial test batch:", TEST_EIINS)
+        return TEST_EIINS
 
-    name = None
-    extracted_roll = str(roll) if roll else None
-    extracted_reg = str(reg) if reg else None
-    gpa = None
-    subjects = {}
-    total_marks = 0
-    core_subject_marks = 0
-
-    # 1. Extract Student Profile Info from Table Rows
-    for tr in soup.find_all("tr"):
-        tds = tr.find_all(["td", "th"])
-        if len(tds) < 2:
-            continue
-
-        label = tds[0].text.strip()
-        val = tds[1].text.strip()
-
-        if any(lbl.lower() in label.lower() for lbl in NAME_LABELS) and not name:
-            name = val
-        elif any(lbl.lower() in label.lower() for lbl in ROLL_LABELS) and not extracted_roll:
-            extracted_roll = val
-        elif any(lbl.lower() in label.lower() for lbl in REG_LABELS) and not extracted_reg:
-            extracted_reg = val
-        elif any(lbl.lower() in label.lower() for lbl in GPA_LABELS) and gpa is None:
-            gpa_match = re.search(r'\d+\.\d+', val)
-            if gpa_match:
-                gpa = float(gpa_match.group(0))
-
-    # Fallbacks if unparsed
-    if not name:
-        name = f"Examinee ({extracted_roll or 'Unknown'})"
-    if gpa is None:
-        gpa = 0.00
-
-    # 2. Extract Subject Marks Table
-    all_labels = [l.lower() for l in NAME_LABELS + ROLL_LABELS + REG_LABELS + GPA_LABELS]
-    for tr in soup.find_all("tr"):
-        tds = tr.find_all(["td", "th"])
-        if len(tds) >= 2:
-            subject_name = tds[0].text.strip()
-            mark_text = tds[1].text.strip()
-
-            # Skip header rows or profile summary rows
-            if any(lbl in subject_name.lower() for lbl in all_labels):
-                continue
-
-            mark_match = re.search(r'\b\d{1,3}\b', mark_text)
-            if mark_match and len(subject_name) > 2:
-                mark_val = int(mark_match.group(0))
-                subjects[subject_name] = mark_val
-                total_marks += mark_val
-
-                if any(core.lower() in subject_name.lower() for core in CORE_SUBJECT_KEYWORDS):
-                    core_subject_marks += mark_val
-
-    return {
-        "name": name,
-        "roll": str(extracted_roll or roll),
-        "registration": str(extracted_reg or reg),
-        "gpa": float(gpa),
-        "subjects": subjects,
-        "totalMarks": total_marks,
-        "coreSubjectMarks": core_subject_marks,
-    }
+    eiin_list = []
+    if os.path.exists(EIIN_CSV_PATH):
+        with open(EIIN_CSV_PATH, "r", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            header = next(reader, None)
+            for row in reader:
+                if row and row[0].strip().isdigit():
+                    eiin_list.append(row[0].strip())
+        print(f"[MODE] Full Scrape Mode active. Loaded {len(eiin_list)} EIINs from CSV.")
+    else:
+        print(f"[ERROR] CSV file not found at {EIIN_CSV_PATH}. Falling back to test list.")
+        eiin_list = TEST_EIINS
+    return eiin_list
 
 
-def scrape_student_result(roll, reg, driver):
-    """
-    Automates extraction of result for a given Roll and Reg number
-    from educationboardresults.gov.bd and saves to MongoDB.
-    """
-    try:
-        print(f"\n[FETCH] Processing Roll #{roll} | Reg #{reg}...")
-        driver.get(TARGET_URL)
+def process_single_eiin(eiin, total_count, session):
+    """Processes a single EIIN: fetches HTML, parses metrics, and upserts to MongoDB."""
+    global completed_count
+    eiin_str = str(eiin).strip()
+    payload = {"eiin": eiin_str}
 
-        # Wait for form to load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.NAME, "exam"))
-        )
+    success = False
+    html_content = ""
 
-        # Select Examination: SSC/Dakhil/Equivalent ('ssc')
-        exam_select = Select(driver.find_element(By.NAME, "exam"))
-        exam_select.select_by_value("ssc")
-
-        # Select Year: '2026' (or fallback to latest option if 2026 isn't listed)
-        year_select = Select(driver.find_element(By.NAME, "year"))
+    for attempt in range(1, MAX_RETRIES + 1):
         try:
-            year_select.select_by_value("2026")
+            resp = session.post(TARGET_URL, data=payload, timeout=TIMEOUT_SECONDS)
+            if resp.status_code == 200 and "INSTITUTE NAME" in resp.text:
+                html_content = resp.text
+                success = True
+                break
+            elif resp.status_code == 302 or "location: index.php" in resp.text:
+                # EIIN not found or invalid
+                break
         except Exception:
-            year_select.select_by_index(1)
+            if attempt < MAX_RETRIES:
+                time.sleep(1)
 
-        # Select Board: Chittagong ('chittagong')
-        board_select = Select(driver.find_element(By.NAME, "board"))
-        board_select.select_by_value("chittagong")
+    with lock:
+        completed_count += 1
+        current_idx = completed_count
 
-        # Enter Roll & Registration
-        roll_input = driver.find_element(By.NAME, "roll")
-        reg_input = driver.find_element(By.NAME, "reg")
+    if not success or not html_content:
+        with lock:
+            failed_eiins.append(eiin_str)
+            with open(FAILED_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(f"{eiin_str}\n")
+        print(f"[{current_idx}/{total_count}] EIIN {eiin_str} | Failed")
+        return False, 0
 
-        roll_input.clear()
-        roll_input.send_keys(str(roll))
-        reg_input.clear()
-        reg_input.send_keys(str(reg))
+    try:
+        inst_info, students_list = parse_student_results(html_content, default_eiin=eiin_str)
+        
+        # Save to MongoDB
+        upsert_institution(inst_info)
+        upsert_students(students_list)
 
-        # Solve Captcha & Fill Answer
-        captcha_ans = solve_math_captcha(driver)
-        if not captcha_ans:
-            print("[ERROR] Captcha solving failed. Skipping roll.")
-            return False
-
-        captcha_input = driver.find_element(By.NAME, "value_s")
-        captcha_input.clear()
-        captcha_input.send_keys(captcha_ans)
-
-        # Submit Form
-        submit_btn = driver.find_element(By.NAME, "button2")
-        submit_btn.click()
-
-        # Wait for Result Table to load
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, "table"))
-        )
-
-        # Parse Page HTML Source using parse_result_page
-        html_source = driver.page_source
-        extracted_data = parse_result_page(html_source, roll=roll, reg=reg)
-
-        print(f"[EXTRACTED] Name: {extracted_data['name']} | GPA: {extracted_data['gpa']} | Total Marks: {extracted_data['totalMarks']}")
-
-        # Send to MongoDB Pipeline via db_handler
-        success = upsert_student(extracted_data)
-        return success
+        student_cnt = len(students_list)
+        print(f"[{current_idx}/{total_count}] EIIN {eiin_str} | Students: {student_cnt} | Saved")
+        return True, student_cnt
 
     except Exception as e:
-        print(f"[ERROR] Error scraping Roll #{roll}: {e}")
-        return False
+        with lock:
+            failed_eiins.append(eiin_str)
+            with open(FAILED_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(f"{eiin_str}\n")
+        print(f"[{current_idx}/{total_count}] EIIN {eiin_str} | Parsing Error: {e} | Failed")
+        return False, 0
 
 
-def main():
+def run_scraper(full_mode=False):
+    global completed_count, failed_eiins
+    completed_count = 0
+    failed_eiins = []
+
+    ensure_log_dir()
+
     print("=========================================================")
-    print("Chittagong SSC Result Scraper & MongoDB Pipeline")
+    print("Chittagong Board SSC 2026 EIIN Result Scraper")
     print("=========================================================")
 
-    batch_students = [
-        {"roll": "102938", "reg": "2110482910"},
-        {"roll": "109842", "reg": "2110482911"},
-        {"roll": "104821", "reg": "2110482913"},
-        {"roll": "106543", "reg": "2110482918"},
-        {"roll": "107123", "reg": "2110482914"},
-    ]
+    # Initialize MongoDB connection & verify indexes
+    get_db()
 
-    try:
-        driver = init_driver(headless=HEADLESS_MODE)
-    except Exception as err:
-        print(f"[WARN] Chrome WebDriver initialization skipped: {err}")
-        print("[INFO] Fallback: Direct MongoDB Pipeline is active via seed.js or HTTP mode.")
-        return
+    eiin_list = load_eiin_list(full_mode=full_mode)
+    total_total = len(eiin_list)
 
-    try:
-        for idx, student in enumerate(batch_students, 1):
-            scrape_student_result(student["roll"], student["reg"], driver)
+    session = create_http_session()
 
-            if idx < len(batch_students):
-                sleep_time = random.uniform(2.0, 5.0)
-                print(f"[WAIT] Sleeping {sleep_time:.2f}s before next request...")
-                time.sleep(sleep_time)
+    start_time = time.time()
+    total_saved_students = 0
 
-    finally:
-        driver.quit()
-        print("\n[DONE] Scraper process completed.")
+    print(f"\n[START] Scraping {total_total} EIINs using {MAX_WORKERS} concurrent threads...\n")
+
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        futures = [
+            executor.submit(process_single_eiin, eiin, total_total, session)
+            for eiin in eiin_list
+        ]
+        for future in as_completed(futures):
+            ok, cnt = future.result()
+            if ok:
+                total_saved_students += cnt
+
+    elapsed = time.time() - start_time
+
+    print("\n=========================================================")
+    print("SCRAPING SUMMARY")
+    print("=========================================================")
+    print(f"Total EIINs Processed : {completed_count}/{total_total}")
+    print(f"Total Students Saved  : {total_saved_students}")
+    print(f"Failed EIINs Count    : {len(failed_eiins)}")
+    if failed_eiins:
+        print(f"Failed EIINs List     : {failed_eiins}")
+        print(f"Failed EIIN Log File  : {FAILED_LOG_PATH}")
+    print(f"Total Time Elapsed    : {elapsed:.2f} seconds")
+    print("=========================================================\n")
 
 
 if __name__ == "__main__":
-    main()
+    full_mode = "--all" in sys.argv or "--full" in sys.argv
+    run_scraper(full_mode=full_mode)

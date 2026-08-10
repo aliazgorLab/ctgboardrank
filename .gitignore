@@ -1,0 +1,22 @@
+# Environment variables
+.env
+.env.local
+.env.production
+*.env
+
+# Dependencies & Build outputs
+node_modules/
+dist/
+build/
+
+# Python
+__pycache__/
+*.pyc
+scraper/logs/
+cookies.txt
+test_output.html
+test_output.json
+
+# IDE & System
+.DS_Store
+*.log
