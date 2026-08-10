@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Award, Beaker, Menu, X, ArrowRight, Sparkles, Trophy, BookOpen } from 'lucide-react';
+import { Beaker, Menu, X, ArrowRight, Sparkles, Trophy, BookOpen } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -24,11 +25,13 @@ export const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           
-          {/* Left Side: Logo & Badge */}
+          {/* Left Side: Logo & Branding */}
           <Link to="/" onClick={handleLogoClick} className="flex items-center gap-3 group focus:outline-none cursor-pointer">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 p-0.5 shadow-md flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
-              <Award className="w-5 h-5 text-indigo-400 group-hover:rotate-12 transition-transform duration-300" />
-            </div>
+            <img
+              src={logo}
+              alt="CTG Board Rank Logo"
+              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-outfit text-xl font-extrabold tracking-tight text-slate-900">
