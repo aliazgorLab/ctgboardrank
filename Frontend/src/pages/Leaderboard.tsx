@@ -212,7 +212,7 @@ export const Leaderboard: React.FC = () => {
                         <td className="py-4 px-4 sm:px-6">
                           <div className="flex flex-col">
                             <span className="font-outfit font-bold text-slate-900 sm:text-base">
-                              {student.name?.trim() || 'N/A'}
+                              {student.name || 'Examinee'}
                             </span>
                             <span className="md:hidden text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <School className="w-3 h-3 text-slate-400 shrink-0" />
