@@ -1,5 +1,4 @@
 import { Student } from '../models/Student.js';
-import { mockData } from '../models/mockData.js';
 
 export const getStudentRank = async (req, res) => {
   try {
@@ -26,48 +25,18 @@ export const getStudentRank = async (req, res) => {
       });
 
       return res.status(200).json({
-        name: student.name,
+        name: student.name || '',
         roll: student.roll,
-        registration: student.registration,
+        registration: student.registration || '',
         gpa: Number(student.gpa),
         achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
         totalMarks: student.totalMarks,
         coreSubjectMarks: student.coreSubjectMarks,
         group: student.group || 'Science',
-        institution: student.institution || 'Chittagong Govt. High School',
+        institution: student.institution || 'Chittagong Education Board',
         boardRank: higherRankCount + 1,
         totalStudents: '142,000+',
       });
-    }
-
-    // 3. Fallback to mockData if DB is empty or unseeded
-    const dbCount = await Student.countDocuments().catch(() => 0);
-    if (dbCount === 0) {
-      const mockStudent = mockData.find((s) => String(s.roll) === String(roll));
-      if (mockStudent) {
-        const higherCountMock = mockData.filter(
-          (s) =>
-            s.gpa > mockStudent.gpa ||
-            (s.gpa === mockStudent.gpa && s.totalMarks > mockStudent.totalMarks) ||
-            (s.gpa === mockStudent.gpa &&
-              s.totalMarks === mockStudent.totalMarks &&
-              s.coreSubjectMarks > mockStudent.coreSubjectMarks)
-        ).length;
-
-        return res.status(200).json({
-          name: mockStudent.name,
-          roll: mockStudent.roll,
-          registration: mockStudent.registration,
-          gpa: Number(mockStudent.gpa),
-          achievement: mockStudent.achievement || (Number(mockStudent.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(mockStudent.gpa).toFixed(2)}`),
-          totalMarks: mockStudent.totalMarks,
-          coreSubjectMarks: mockStudent.coreSubjectMarks,
-          group: mockStudent.group || 'Science',
-          institution: mockStudent.institution || 'Chittagong Govt. High School',
-          boardRank: higherCountMock + 1,
-          totalStudents: '142,000+',
-        });
-      }
     }
 
     return res.status(404).json({ error: 'Student not found.' });
@@ -92,37 +61,21 @@ export const getLeaderboard = async (req, res) => {
     }
 
     // Query sorted top students using compound index { group: 1, gpa: -1, totalMarks: -1, coreSubjectMarks: -1 }
-    let students = await Student.find(queryFilter)
+    const students = await Student.find(queryFilter)
       .sort({ gpa: -1, totalMarks: -1, coreSubjectMarks: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    // Fallback to mockData if DB is empty / unseeded
-    if (!students || students.length === 0) {
-      let mockList = [...mockData];
-      if (reqGroup && ALLOWED_GROUPS.includes(reqGroup)) {
-        mockList = mockList.filter((s) => s.group === reqGroup);
-      }
-
-      const sortedMock = mockList.sort((a, b) => {
-        if (b.gpa !== a.gpa) return b.gpa - a.gpa;
-        if (b.totalMarks !== a.totalMarks) return b.totalMarks - a.totalMarks;
-        return b.coreSubjectMarks - a.coreSubjectMarks;
-      });
-
-      students = sortedMock.slice(skip, skip + limit);
-    }
-
     const leaderboard = students.map((student, idx) => ({
       rank: skip + idx + 1,
-      name: student.name,
+      name: student.name || '',
       roll: student.roll,
       gpa: Number(student.gpa),
       achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
       group: student.group || 'Science',
       totalMarks: student.totalMarks,
-      institution: student.institution || 'Chittagong Govt. High School',
+      institution: student.institution || 'Chittagong Education Board',
     }));
 
     return res.status(200).json(leaderboard);
