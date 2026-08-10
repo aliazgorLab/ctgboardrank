@@ -41,12 +41,12 @@ export const Leaderboard: React.FC = () => {
       setError(null);
       try {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        let url = `${baseUrl}/api/rank/leaderboard?limit=1000`;
+        let url = `${baseUrl}/api/rank/leaderboard?limit=1000&_t=${Date.now()}`;
         if (selectedGroup !== 'All') {
           url += `&group=${encodeURIComponent(selectedGroup)}`;
         }
 
-        const res = await fetch(url);
+        const res = await fetch(url, { cache: 'no-store' });
         if (!res.ok) {
           throw new Error('No leaderboard data available');
         }
@@ -166,7 +166,7 @@ export const Leaderboard: React.FC = () => {
                 </div>
                 <button
                   onClick={() => handleViewDetails(top2.roll)}
-                  className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-outfit text-xs font-bold flex items-center justify-center gap-1 transition-colors"
+                  className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-outfit text-xs font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
                 >
                   <span>View Details</span>
                   <ChevronRight className="w-3.5 h-3.5" />
