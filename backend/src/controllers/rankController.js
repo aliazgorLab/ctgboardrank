@@ -21,12 +21,6 @@ export const getStudentRank = async (req, res) => {
           {
             rankTotalMarks: effectiveRankTotalMarks,
             gpa: student.gpa,
-            coreSubjectMarks: { $gt: student.coreSubjectMarks },
-          },
-          {
-            rankTotalMarks: effectiveRankTotalMarks,
-            gpa: student.gpa,
-            coreSubjectMarks: student.coreSubjectMarks,
             roll: { $lt: student.roll },
           },
         ],
@@ -69,10 +63,10 @@ export const getLeaderboard = async (req, res) => {
       queryFilter.group = reqGroup;
     }
 
-    // Query sorted top students up to 1000 using compound index
+    // Query sorted top students using compound index { rankTotalMarks: -1, gpa: -1, roll: 1 }
     const students = await Student.find(queryFilter)
       .select('name roll gpa group totalMarks rankTotalMarks institution coreSubjectMarks achievement')
-      .sort({ rankTotalMarks: -1, gpa: -1, coreSubjectMarks: -1, roll: 1 })
+      .sort({ rankTotalMarks: -1, gpa: -1, roll: 1 })
       .skip(skip)
       .limit(limit)
       .lean();

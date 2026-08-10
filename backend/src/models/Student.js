@@ -58,10 +58,10 @@ const studentSchema = new mongoose.Schema(
   }
 );
 
-// Global ranking compound index for Top 1000
-studentSchema.index({ rankTotalMarks: -1, gpa: -1, coreSubjectMarks: -1, roll: 1 });
+// Global ranking compound index
+studentSchema.index({ rankTotalMarks: -1, gpa: -1, roll: 1 });
 
-// Group-filtered ranking compound index for Top 1000
-studentSchema.index({ group: 1, rankTotalMarks: -1, gpa: -1, coreSubjectMarks: -1, roll: 1 });
+// Group-filtered ranking compound index
+studentSchema.index({ group: 1, rankTotalMarks: -1, gpa: -1, roll: 1 });
 
 export const Student = mongoose.model('Student', studentSchema);
