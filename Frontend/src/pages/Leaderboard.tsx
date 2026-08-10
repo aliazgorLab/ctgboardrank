@@ -249,9 +249,14 @@ export const Leaderboard: React.FC = () => {
         {/* Disclaimer Card */}
         <div className="max-w-4xl mx-auto bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-amber-900 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs sm:text-sm font-medium leading-relaxed">
-            <strong className="font-bold">Disclaimer:</strong> Rankings are generated using +150 adjusted total marks (max 1300) based on publicly available Chittagong Board EIIN result metrics. Official board positions may vary.
-          </p>
+          <div className="text-xs sm:text-sm font-medium leading-relaxed space-y-1.5">
+            <p>
+              <strong className="font-bold">সতর্কবার্তা:</strong> এটি চট্টগ্রাম শিক্ষা বোর্ডের কোনো অফিসিয়াল ওয়েবসাইট বা অফিসিয়াল র্যাঙ্কিং নয়।
+            </p>
+            <p>
+              পাবলিক রেজাল্ট উপাত্তের ওপর ভিত্তি করে তৈরি এটি একটি আন-অফিসিয়াল মেরিট অ্যানালাইটিক্স পোর্টাল। এখানে প্রদর্শিত র্যাঙ্কিং শুধুমাত্র বিশ্লেষণ ও তথ্য উপস্থাপনের উদ্দেশ্যে তৈরি করা হয়েছে। অফিসিয়াল রেজাল্ট, নম্বরপত্র ও চূড়ান্ত তথ্যের জন্য চট্টগ্রাম শিক্ষা বোর্ডের অফিসিয়াল ওয়েবসাইট দেখুন।
+            </p>
+          </div>
         </div>
 
         {/* Leaderboard Table Card Container */}
