@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trophy, Award, ArrowRight, Beaker, Filter, Loader2, School, AlertTriangle } from 'lucide-react';
+import { Trophy, Award, Filter, Loader2, School, AlertTriangle } from 'lucide-react';
 import { ScholarshipOfferCard } from '../components/ScholarshipOfferCard';
 
 export interface LeaderboardStudent {
@@ -23,6 +23,14 @@ export const Leaderboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Clear any potential browser storage cache
+    try {
+      localStorage.removeItem('leaderboardCache');
+      sessionStorage.removeItem('leaderboardCache');
+    } catch {
+      // Ignore storage errors
+    }
+
     const fetchLeaderboard = async () => {
       setIsLoading(true);
       setError(null);
@@ -35,18 +43,21 @@ export const Leaderboard: React.FC = () => {
 
         const res = await fetch(url);
         if (!res.ok) {
-          throw new Error('Failed to load leaderboard records');
+          throw new Error('No leaderboard data available');
         }
 
         const data = await res.json();
-        if (Array.isArray(data)) {
+        console.log('Leaderboard API response:', data);
+
+        if (Array.isArray(data) && data.length > 0) {
           setStudents(data);
         } else {
           setStudents([]);
+          setError('No leaderboard data available');
         }
       } catch (err: any) {
         console.error('Error loading leaderboard:', err);
-        setError('Unable to fetch live leaderboard data. Please check backend connection.');
+        setError('No leaderboard data available');
         setStudents([]);
       } finally {
         setIsLoading(false);
@@ -79,46 +90,43 @@ export const Leaderboard: React.FC = () => {
         
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-700 text-xs font-bold tracking-wide">
-            <Trophy className="w-3.5 h-3.5 text-amber-500" /> 🏆 Live Merit Standings
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold tracking-wide">
+            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Merit Standings
           </div>
-          
-          <h1 className="font-outfit font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight">
-            Chittagong Board Top Merit List
+          <h1 className="font-outfit font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight">
+            SSC '26 Official Board Leaderboard
           </h1>
-
-          <p className="font-jakarta text-sm sm:text-base text-slate-600 font-medium max-w-2xl mx-auto">
-            The brightest minds of SSC Batch '26. Top rankers are eligible for a <strong className="text-indigo-600 font-bold">50% scholarship</strong> at Zahid's Chem Clinic.
+          <p className="font-jakarta text-base text-slate-600 font-medium">
+            Explore the top merit examinees across Chittagong Board ranked by GPA, Total Marks & Core STEM Marks.
           </p>
         </div>
 
-        {/* Filter Controls Bar */}
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-sm">
-          <div className="flex items-center gap-2 text-slate-700 text-sm font-bold">
-            <Filter className="w-4 h-4 text-indigo-600" />
-            <span>Filter by Group:</span>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <select
-              value={selectedGroup}
-              onChange={(e) => setSelectedGroup(e.target.value as GroupOption)}
-              className="w-full sm:w-48 px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition cursor-pointer"
-            >
-              {GROUPS.map((grp) => (
-                <option key={grp} value={grp}>
-                  {grp === 'All' ? 'All Groups' : grp}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Group Filter Tabs */}
+        <div className="flex flex-wrap items-center justify-center gap-2 max-w-xl mx-auto">
+          {GROUPS.map((group) => {
+            const isSelected = selectedGroup === group;
+            return (
+              <button
+                key={group}
+                onClick={() => setSelectedGroup(group)}
+                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold font-outfit transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20 scale-105'
+                    : 'bg-white border border-slate-200/90 text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
+              >
+                {isSelected && <Filter className="w-3.5 h-3.5 text-amber-400" />}
+                <span>{group}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Disclaimer Alert Box */}
-        <div className="max-w-4xl mx-auto bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 flex items-start gap-3 text-amber-900 shadow-sm">
+        {/* Disclaimer Card */}
+        <div className="max-w-4xl mx-auto bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-amber-900 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs sm:text-sm font-medium leading-relaxed">
-            <strong className="font-bold">Disclaimer:</strong> This is not an official ranking published by the Chittagong Education Board. This ranking is independently prepared based on publicly available result data and academic performance metrics. Actual official rankings may vary.
+            <strong className="font-bold">Disclaimer:</strong> This ranking is independently calculated based on publicly available Chittagong Board EIIN result metrics. Actual official board positions may vary.
           </p>
         </div>
 
@@ -153,16 +161,10 @@ export const Leaderboard: React.FC = () => {
                       </div>
                     </td>
                   </tr>
-                ) : error ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-rose-600 font-medium">
-                      {error}
-                    </td>
-                  </tr>
-                ) : students.length === 0 ? (
+                ) : error || students.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-12 text-center text-slate-500 font-medium">
-                      No rank records found for group '{selectedGroup}'.
+                      {error || 'No leaderboard data available'}
                     </td>
                   </tr>
                 ) : (
@@ -173,7 +175,7 @@ export const Leaderboard: React.FC = () => {
 
                     return (
                       <tr
-                        key={student.roll}
+                        key={`${student.roll}-${student.rank}`}
                         className={`transition-colors hover:bg-slate-50/80 ${
                           isRank1
                             ? 'bg-amber-500/10 border-l-4 border-amber-500'
@@ -210,11 +212,11 @@ export const Leaderboard: React.FC = () => {
                         <td className="py-4 px-4 sm:px-6">
                           <div className="flex flex-col">
                             <span className="font-outfit font-bold text-slate-900 sm:text-base">
-                              {student.name && student.name.trim() !== '' ? student.name : 'N/A'}
+                              {student.name?.trim() || 'N/A'}
                             </span>
                             <span className="md:hidden text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <School className="w-3 h-3 text-slate-400 shrink-0" />
-                              {student.institution || 'Chittagong Govt. High School'}
+                              {student.institution || 'Chittagong Education Board'}
                             </span>
                           </div>
                         </td>
@@ -239,58 +241,36 @@ export const Leaderboard: React.FC = () => {
                         </td>
 
                         {/* 6. Total Marks Column */}
-                        <td className="py-4 px-3 sm:px-4 text-right font-outfit font-bold text-slate-900 sm:text-base">
+                        <td className="py-4 px-3 sm:px-4 text-right font-outfit font-extrabold text-slate-900 text-base">
                           {student.totalMarks}
                         </td>
 
-                        {/* 7. Institution Column (visible on md+) */}
-                        <td className="py-4 px-4 sm:px-6 hidden md:table-cell text-slate-600 font-medium text-xs sm:text-sm">
-                          {student.institution || 'Chittagong Govt. High School'}
+                        {/* 7. Institution Column (Desktop) */}
+                        <td className="py-4 px-4 sm:px-6 hidden md:table-cell text-slate-600 text-xs font-semibold max-w-[220px] truncate">
+                          {student.institution || 'Chittagong Education Board'}
                         </td>
                       </tr>
                     );
                   })
                 )}
               </tbody>
-
             </table>
           </div>
 
-          {/* Zahid's Chem Clinic Promo Banner Overlay */}
-          <div className="p-4 sm:p-5 bg-indigo-900 text-white flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-indigo-800">
-            <div className="flex items-center gap-3 text-center sm:text-left">
-              <div className="p-2 rounded-xl bg-indigo-800 text-indigo-200 shrink-0 hidden sm:block">
-                <Beaker className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-outfit font-bold text-sm text-white">
-                  Made the Top Merit List? Claim your Zahid's Chem Clinic Elite Scholarship
-                </h4>
-                <p className="text-xs text-indigo-200 font-medium">
-                  Exclusive 50% discount for top Chittagong Board rank holders.
-                </p>
-              </div>
-            </div>
-
-            <a
-              href="/#zahid-chem-clinic"
-              className="font-outfit font-bold text-xs sm:text-sm text-indigo-950 bg-white hover:bg-slate-100 px-5 py-2.5 rounded-xl shadow transition-transform hover:scale-105 flex items-center gap-1.5 shrink-0"
-            >
-              Claim Scholarship
-              <ArrowRight className="w-3.5 h-3.5 text-indigo-950" />
-            </a>
+          {/* Table Footer Stats */}
+          <div className="bg-slate-50 border-t border-slate-100 p-4 sm:px-6 flex items-center justify-between text-xs text-slate-500 font-semibold">
+            <span>Showing top {students.length} merit examinees</span>
+            <span className="text-indigo-600 font-bold">Chittagong Board Official Dataset</span>
           </div>
 
-          {/* Bangla Scholarship Offer Card Below Leaderboard */}
-          <div className="max-w-4xl mx-auto pt-4">
-            <ScholarshipOfferCard />
-          </div>
+        </div>
 
+        {/* Bottom CTA Banner Component */}
+        <div className="max-w-4xl mx-auto pt-4">
+          <ScholarshipOfferCard />
         </div>
 
       </div>
     </div>
   );
 };
-
-export default Leaderboard;
