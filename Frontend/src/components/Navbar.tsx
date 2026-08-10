@@ -30,7 +30,7 @@ export const Navbar = () => {
             <img
               src={logo}
               alt="CTG Board Rank Logo"
-              className="h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+              className="h-8 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
             />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
