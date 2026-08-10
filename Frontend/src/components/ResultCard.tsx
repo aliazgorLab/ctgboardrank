@@ -72,7 +72,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
               Examinee Name
             </span>
             <span className="font-outfit font-bold text-sm sm:text-base text-slate-900">
-              {data.name || 'Examinee'}
+              {data.name && data.name.trim() !== '' ? data.name : 'N/A'}
             </span>
           </div>
         </div>

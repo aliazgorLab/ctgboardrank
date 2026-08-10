@@ -34,7 +34,7 @@ export function Home() {
       const data = await response.json();
 
       setStudentData({
-        name: data.name && data.name.trim() !== '' ? data.name : 'Student',
+        name: data.name && data.name.trim() !== '' ? data.name : 'N/A',
         roll: data.roll || roll,
         reg: data.registration || 'N/A',
         gpa: typeof data.gpa === 'number' ? data.gpa : (parseFloat(data.gpa) || 5.0),
