@@ -68,7 +68,7 @@ export const getStudentRank = async (req, res) => {
     const student = await Student.findOne({ roll: String(roll) }).lean();
 
     if (student) {
-      const effectiveRankTotalMarks = Math.min(1300, student.rankTotalMarks || (student.totalMarks + 150));
+      const effectiveRankTotalMarks = Math.min(1250, student.rankTotalMarks ?? student.totalMarks);
 
       // 2. Efficient O(log N) rank calculation using countDocuments formula
       const higherRankCount = await Student.countDocuments({
@@ -106,6 +106,7 @@ export const getStudentRank = async (req, res) => {
         achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
         totalMarks: student.totalMarks,
         rankTotalMarks: effectiveRankTotalMarks,
+        maxMarks: 1250,
         coreSubjectMarks: student.coreSubjectMarks,
         group: student.group || 'Science',
         institution: cleanInstitution,
@@ -153,9 +154,12 @@ export const getLeaderboard = async (req, res) => {
       achievement: student.achievement || (Number(student.gpa) === 5 ? 'Golden GPA 5' : `GPA ${Number(student.gpa).toFixed(2)}`),
       group: student.group || 'Science',
       totalMarks: student.totalMarks,
-      rankTotalMarks: Math.min(1300, student.rankTotalMarks || (student.totalMarks + 150)),
+      rankTotalMarks: Math.min(1250, student.rankTotalMarks ?? student.totalMarks),
+      maxMarks: 1250,
       institution: student.institution || 'Chittagong Education Board',
     }));
+
+    return res.status(200).json(leaderboard);
 
     return res.status(200).json(leaderboard);
   } catch (error) {

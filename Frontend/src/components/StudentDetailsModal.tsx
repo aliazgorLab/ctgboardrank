@@ -230,7 +230,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ roll, 
                     <span className="font-outfit font-black text-2xl sm:text-3xl text-emerald-700">
                       {data.rankTotalMarks}
                     </span>
-                    <span className="block text-[10px] text-slate-500 font-medium">Out of 1300 (+150 Adj)</span>
+                    <span className="block text-[10px] text-slate-500 font-medium">Out of 1250 Marks Scale</span>
                   </div>
                 </div>
 

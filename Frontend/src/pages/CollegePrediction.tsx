@@ -226,7 +226,7 @@ export const CollegePrediction: React.FC = () => {
           <div>
             <span className="font-outfit font-extrabold text-amber-900 block mb-0.5">Disclaimer</span>
             <p className="text-amber-800 font-medium leading-relaxed">
-              Disclaimer: This is an unofficial admission prediction based on previous trends and available seat information. Final admission depends on official government policies and merit lists.
+              Disclaimer: This is an unofficial merit analytics platform based on publicly available Chittagong Board result data. Rankings are calculated using a 1250 marks scale and may differ from official board rankings.
             </p>
           </div>
         </div>

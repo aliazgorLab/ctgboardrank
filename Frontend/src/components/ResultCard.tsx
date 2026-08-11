@@ -121,7 +121,7 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset, onViewDet
               Total Marks
             </span>
             <span className="font-outfit font-bold text-sm sm:text-base text-slate-900">
-              {data.marks} / 1300
+              {data.marks} / 1250
             </span>
           </div>
         </div>

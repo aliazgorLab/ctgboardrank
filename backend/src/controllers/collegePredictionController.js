@@ -185,8 +185,8 @@ export const getCollegePrediction = async (req, res) => {
     }
 
     const effectiveRankTotalMarks = Math.min(
-      1300,
-      student.rankTotalMarks || student.totalMarks + 150
+      1250,
+      student.rankTotalMarks ?? student.totalMarks
     );
 
     const higherRankCount = await Student.countDocuments({

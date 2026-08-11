@@ -173,7 +173,7 @@ export const Leaderboard: React.FC = () => {
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-medium">Rank Total Marks</span>
                     <span className="text-lg font-black font-outfit text-slate-900">
-                      {top2.rankTotalMarks || top2.totalMarks + 150}
+                      {top2.rankTotalMarks ?? top2.totalMarks}
                     </span>
                   </div>
                 </div>
@@ -209,7 +209,7 @@ export const Leaderboard: React.FC = () => {
                   <div className="pt-2 border-t border-amber-100 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-semibold">Rank Total Marks</span>
                     <span className="text-xl font-black font-outfit text-amber-600">
-                      {top1.rankTotalMarks || top1.totalMarks + 150}
+                      {top1.rankTotalMarks ?? top1.totalMarks}
                     </span>
                   </div>
                 </div>
@@ -242,7 +242,7 @@ export const Leaderboard: React.FC = () => {
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-xs text-slate-500 font-medium">Rank Total Marks</span>
                     <span className="text-lg font-black font-outfit text-amber-900">
-                      {top3.rankTotalMarks || top3.totalMarks + 150}
+                      {top3.rankTotalMarks ?? top3.totalMarks}
                     </span>
                   </div>
                 </div>
@@ -263,7 +263,7 @@ export const Leaderboard: React.FC = () => {
         <div className="max-w-4xl mx-auto bg-amber-50/70 border border-amber-200/80 rounded-2xl p-4 text-amber-900 flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs sm:text-sm font-medium leading-relaxed">
-            <strong className="font-bold">Disclaimer:</strong> This is not an official Chittagong Education Board website or official ranking. This unofficial merit analytics portal is created based on publicly available result data for analysis purposes only. For official results and marksheets, please visit the official board website.
+            <strong className="font-bold">Disclaimer:</strong> This is an unofficial merit analytics platform based on publicly available Chittagong Board result data. Rankings are calculated using a 1250 marks scale and may differ from official board rankings.
           </p>
         </div>
 
@@ -308,7 +308,7 @@ export const Leaderboard: React.FC = () => {
                     const isRank1 = student.rank === 1;
                     const isRank2 = student.rank === 2;
                     const isRank3 = student.rank === 3;
-                    const displayRankTotal = student.rankTotalMarks || (student.totalMarks + 150);
+                    const displayRankTotal = student.rankTotalMarks ?? student.totalMarks;
 
                     return (
                       <tr
