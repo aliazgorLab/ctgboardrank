@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Sparkles, User, Hash, Award, BarChart3, RefreshCw } from 'lucide-react';
+import { CheckCircle2, Sparkles, User, Hash, Award, BarChart3, RefreshCw, BookOpen } from 'lucide-react';
 
 export interface ResultData {
   name: string;
@@ -15,9 +15,10 @@ export interface ResultData {
 interface ResultCardProps {
   data: ResultData;
   onReset: () => void;
+  onViewDetails?: (roll: string) => void;
 }
 
-export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
+export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset, onViewDetails }) => {
   return (
     <div className="w-full max-w-2xl mx-auto bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-2xl shadow-emerald-500/10 space-y-8 animate-in fade-in zoom-in-95 duration-500 font-jakarta">
       
@@ -121,8 +122,17 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset }) => {
             </span>
           </div>
         </div>
-
       </div>
+
+      {/* View Full Subject-Wise Breakdown Button */}
+      <button
+        type="button"
+        onClick={() => onViewDetails ? onViewDetails(data.roll) : (window.location.href = `/leaderboard?roll=${encodeURIComponent(data.roll)}`)}
+        className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-outfit text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer border border-slate-800"
+      >
+        <BookOpen className="w-4 h-4 text-amber-400" />
+        <span>View Complete Subject-wise Marks & Grades Sheet</span>
+      </button>
 
       {/* Result Special Offer CTA (Zahid's Chem Clinic) */}
       <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border border-amber-500/40 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-xl relative overflow-hidden text-white">

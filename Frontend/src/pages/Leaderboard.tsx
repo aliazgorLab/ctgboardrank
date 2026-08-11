@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Filter, Loader2, School, AlertTriangle, ExternalLink, ChevronRight, ChevronLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { ScholarshipOfferCard } from '../components/ScholarshipOfferCard';
+import { StudentDetailsModal } from '../components/StudentDetailsModal';
 
 export interface LeaderboardStudent {
   rank: number;
@@ -26,7 +27,18 @@ export const Leaderboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const navigate = useNavigate();
+  const [modalRoll, setModalRoll] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const rollParam = params.get('roll');
+    if (rollParam) {
+      setModalRoll(rollParam);
+      setIsModalOpen(true);
+    }
+  }, [location.search]);
 
   useEffect(() => {
     try {
@@ -72,7 +84,8 @@ export const Leaderboard: React.FC = () => {
   }, [selectedGroup]);
 
   const handleViewDetails = (roll: string) => {
-    navigate(`/?roll=${encodeURIComponent(roll)}`);
+    setModalRoll(roll);
+    setIsModalOpen(true);
   };
 
   const top1 = students.find((s) => s.rank === 1);
@@ -437,6 +450,16 @@ export const Leaderboard: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Student Result Details Modal */}
+      <StudentDetailsModal
+        roll={modalRoll}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setModalRoll(null);
+        }}
+      />
     </div>
   );
 };

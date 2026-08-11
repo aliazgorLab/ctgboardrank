@@ -5,11 +5,14 @@ import { ResultCard } from '../components/ResultCard';
 import type { ResultData } from '../components/ResultCard';
 import { PromoSection } from '../components/PromoSection';
 import { ResultScholarshipModal } from '../components/ResultScholarshipModal';
+import { StudentDetailsModal } from '../components/StudentDetailsModal';
 
 export function Home() {
   const [studentData, setStudentData] = useState<ResultData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [modalRoll, setModalRoll] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const handleFetchRank = async (roll: string) => {
     setIsLoading(true);
@@ -67,7 +70,14 @@ export function Home() {
       {studentData ? (
         <section id="rank-checker" className="py-16 lg:py-24 bg-slate-50 font-jakarta relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ResultCard data={studentData} onReset={handleReset} />
+            <ResultCard 
+              data={studentData} 
+              onReset={handleReset}
+              onViewDetails={(roll) => {
+                setModalRoll(roll);
+                setIsModalOpen(true);
+              }}
+            />
           </div>
         </section>
       ) : (
@@ -83,6 +93,16 @@ export function Home() {
 
       {/* 5-Second Post-Result Search Scholarship Modal */}
       <ResultScholarshipModal isResultLoaded={!!studentData} />
+
+      {/* Full Student Result Details Modal */}
+      <StudentDetailsModal
+        roll={modalRoll}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setModalRoll(null);
+        }}
+      />
     </>
   );
 }

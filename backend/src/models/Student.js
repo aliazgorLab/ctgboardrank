@@ -52,6 +52,10 @@ const studentSchema = new mongoose.Schema(
       default: 'Chittagong Govt. High School',
       trim: true,
     },
+    subjects: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: true,
