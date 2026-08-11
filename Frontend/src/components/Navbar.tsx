@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Beaker, Menu, X, ArrowRight, Sparkles, Trophy, BookOpen } from 'lucide-react';
+import { Beaker, Menu, X, ArrowRight, Sparkles, Trophy, GraduationCap } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 export const Navbar = () => {
@@ -60,25 +60,31 @@ export const Navbar = () => {
             </Link>
             <Link 
               to="/leaderboard" 
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5"
+              className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/leaderboard' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               <Trophy className="w-4 h-4 text-amber-500" />
               Leaderboard
             </Link>
             <Link 
+              to="/college-prediction" 
+              className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/college-prediction' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <GraduationCap className="w-4 h-4 text-blue-600" />
+              Govt. College Prediction
+            </Link>
+            <Link 
               to="/zahid-chem-clinic" 
-              className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors flex items-center gap-1.5 group"
+              className={`text-sm font-semibold transition-colors flex items-center gap-1.5 group ${
+                location.pathname === '/zahid-chem-clinic' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-indigo-600'
+              }`}
             >
               <Beaker className="w-4 h-4 text-indigo-600 group-hover:rotate-12 transition-transform" />
               Zahid's Chem Clinic
             </Link>
-            <a 
-              href="/#hsc-batches" 
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5"
-            >
-              <BookOpen className="w-4 h-4 text-emerald-600" />
-              HSC Batches
-            </a>
           </nav>
 
           {/* Right Side: Prominent CTA Button */}
@@ -121,27 +127,39 @@ export const Navbar = () => {
           <Link
             to="/leaderboard"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${
+              location.pathname === '/leaderboard'
+                ? 'bg-indigo-50 text-indigo-700 font-bold'
+                : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+            }`}
           >
             <Trophy className="w-4 h-4 text-amber-500" />
             Leaderboard
           </Link>
           <Link
+            to="/college-prediction"
+            onClick={() => setMobileMenuOpen(false)}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${
+              location.pathname === '/college-prediction'
+                ? 'bg-indigo-50 text-indigo-700 font-bold'
+                : 'text-slate-700 hover:bg-slate-50 hover:text-blue-600'
+            }`}
+          >
+            <GraduationCap className="w-4 h-4 text-blue-600" />
+            Govt. College Prediction
+          </Link>
+          <Link
             to="/zahid-chem-clinic"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${
+              location.pathname === '/zahid-chem-clinic'
+                ? 'bg-indigo-50 text-indigo-700 font-bold'
+                : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
+            }`}
           >
             <Beaker className="w-4 h-4 text-indigo-600" />
             Zahid's Chem Clinic
           </Link>
-          <a
-            href="/#hsc-batches"
-            onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600"
-          >
-            <BookOpen className="w-4 h-4 text-emerald-600" />
-            HSC Batches
-          </a>
           <div className="pt-2">
             <Link
               to="/zahid-chem-clinic"

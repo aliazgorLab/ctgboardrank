@@ -5,6 +5,7 @@ import { Home } from './pages/Home';
 import { CheckResult } from './pages/CheckResult';
 import { Leaderboard } from './pages/Leaderboard';
 import { ZahidChemClinic } from './pages/ZahidChemClinic';
+import { CollegePrediction } from './pages/CollegePrediction';
 import { ScholarshipPopup } from './components/ScholarshipPopup';
 import { ScholarshipClaimModal } from './components/ScholarshipClaimModal';
 
@@ -21,6 +22,7 @@ export function App() {
             <Route path="/" element={<Home />} />
             <Route path="/check-result" element={<CheckResult />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/college-prediction" element={<CollegePrediction />} />
             <Route path="/zahid-chem-clinic" element={<ZahidChemClinic />} />
           </Routes>
         </main>

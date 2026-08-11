@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { X, Trophy, School, User, Award, BarChart3, BookOpen, Sparkles, Loader2, AlertCircle, FileCheck2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Trophy, School, User, Award, BarChart3, BookOpen, Sparkles, Loader2, AlertCircle, FileCheck2, GraduationCap } from 'lucide-react';
 
 export interface StudentSubject {
   code: string;
@@ -35,6 +36,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ roll, 
   const [data, setData] = useState<StudentDetailData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isOpen || !roll) {
@@ -361,12 +363,27 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ roll, 
             Unofficial Merit Analytics Portal • Chittagong Education Board SSC 2026
           </p>
 
-          <button
-            onClick={onClose}
-            className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-outfit font-bold text-xs transition-colors cursor-pointer"
-          >
-            Close Details
-          </button>
+          <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+            {data && (
+              <button
+                onClick={() => {
+                  navigate(`/college-prediction?roll=${encodeURIComponent(data.roll)}`);
+                  onClose();
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-blue-700 to-indigo-700 hover:from-blue-600 hover:to-indigo-600 text-white rounded-xl font-outfit font-extrabold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <GraduationCap className="w-4 h-4 text-amber-300" />
+                <span>🎓 Check Govt College Chance</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-outfit font-bold text-xs transition-colors cursor-pointer"
+            >
+              Close Details
+            </button>
+          </div>
         </div>
 
       </div>

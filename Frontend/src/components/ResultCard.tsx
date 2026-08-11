@@ -1,5 +1,6 @@
 import React from 'react';
-import { CheckCircle2, Sparkles, User, Hash, Award, BarChart3, RefreshCw, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, Sparkles, User, Hash, Award, BarChart3, RefreshCw, BookOpen, GraduationCap } from 'lucide-react';
 
 export interface ResultData {
   name: string;
@@ -19,6 +20,8 @@ interface ResultCardProps {
 }
 
 export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset, onViewDetails }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="w-full max-w-2xl mx-auto bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-2xl shadow-emerald-500/10 space-y-8 animate-in fade-in zoom-in-95 duration-500 font-jakarta">
       
@@ -124,15 +127,28 @@ export const ResultCard: React.FC<ResultCardProps> = ({ data, onReset, onViewDet
         </div>
       </div>
 
-      {/* View Full Subject-Wise Breakdown Button */}
-      <button
-        type="button"
-        onClick={() => onViewDetails ? onViewDetails(data.roll) : (window.location.href = `/leaderboard?roll=${encodeURIComponent(data.roll)}`)}
-        className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-outfit text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer border border-slate-800"
-      >
-        <BookOpen className="w-4 h-4 text-amber-400" />
-        <span>View Complete Subject-wise Marks & Grades Sheet</span>
-      </button>
+      {/* Action Buttons Section */}
+      <div className="space-y-3">
+        {/* Govt College Prediction CTA Button */}
+        <button
+          type="button"
+          onClick={() => navigate(`/college-prediction?roll=${encodeURIComponent(data.roll)}`)}
+          className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 hover:from-blue-800 hover:to-slate-950 text-white rounded-2xl font-outfit text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer border border-blue-600/30 group"
+        >
+          <GraduationCap className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+          <span>🎓 Check Govt College Chance</span>
+        </button>
+
+        {/* View Full Subject-Wise Breakdown Button */}
+        <button
+          type="button"
+          onClick={() => onViewDetails ? onViewDetails(data.roll) : (window.location.href = `/leaderboard?roll=${encodeURIComponent(data.roll)}`)}
+          className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-outfit text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer border border-slate-800"
+        >
+          <BookOpen className="w-4 h-4 text-amber-400" />
+          <span>View Complete Subject-wise Marks & Grades Sheet</span>
+        </button>
+      </div>
 
       {/* Result Special Offer CTA (Zahid's Chem Clinic) */}
       <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border border-amber-500/40 p-5 sm:p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-left shadow-xl relative overflow-hidden text-white">

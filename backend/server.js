@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { connectDB } from './src/config/db.js';
 import rankRoutes from './src/routes/rankRoutes.js';
+import collegePredictionRoutes from './src/routes/collegePredictionRoutes.js';
 
 dotenv.config();
 
@@ -66,9 +67,10 @@ app.get('/', (req, res) => {
   });
 });
 
-// Mount Rank & Student Routes
+// Mount Rank, Student & College Prediction Routes
 app.use('/api/rank', rankRoutes);
 app.use('/api/student', rankRoutes);
+app.use('/api/college-prediction', collegePredictionRoutes);
 
 // -----------------------------------------------------------------------------
 // Production Error & 404 Middlewares
