@@ -53,7 +53,7 @@ export const Leaderboard: React.FC = () => {
       setError(null);
       try {
         const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-        let url = `${baseUrl}/api/rank/leaderboard?limit=1000&_t=${Date.now()}`;
+        let url = `${baseUrl}/api/rank/leaderboard?limit=5000&_t=${Date.now()}`;
         if (selectedGroup !== 'All') {
           url += `&group=${encodeURIComponent(selectedGroup)}`;
         }
@@ -106,6 +106,22 @@ export const Leaderboard: React.FC = () => {
     }
   };
 
+  const getPageNumbers = (current: number, total: number) => {
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages: (number | string)[] = [1];
+    if (current > 3) pages.push('...');
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push('...');
+    pages.push(total);
+    return pages;
+  };
+
   return (
     <div id="leaderboard" className="min-h-[calc(100vh-140px)] py-10 sm:py-14 lg:py-16 bg-slate-50 font-jakarta relative overflow-hidden flex flex-col justify-center">
       
@@ -117,13 +133,13 @@ export const Leaderboard: React.FC = () => {
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold tracking-wide">
-            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Top 1000 Standings
+            <Trophy className="w-3.5 h-3.5 text-amber-600" /> Chittagong Board Top 5000 Standings
           </div>
           <h1 className="font-outfit font-black text-3xl sm:text-4xl lg:text-5xl text-slate-900 tracking-tight leading-tight">
             SSC '26 Board Leaderboard
           </h1>
           <p className="font-jakarta text-base text-slate-600 font-medium">
-            Top 1000 examinees across Chittagong Board ranked by Adjusted Total Marks (max 1300), GPA, Core Subject Marks, and Roll.
+            Top 5000 examinees across Chittagong Board ranked by Total Marks (max 1250), GPA, Core Subject Marks, and Roll.
           </p>
         </div>
 
@@ -412,7 +428,14 @@ export const Leaderboard: React.FC = () => {
                     <ChevronLeft className="w-4 h-4" />
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => {
+                  {getPageNumbers(currentPage, totalPages).map((pg, idx) => {
+                    if (typeof pg === 'string') {
+                      return (
+                        <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-slate-400 font-bold select-none">
+                          ...
+                        </span>
+                      );
+                    }
                     const isCurrent = pg === currentPage;
                     return (
                       <button

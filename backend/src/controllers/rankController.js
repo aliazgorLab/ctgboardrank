@@ -128,7 +128,7 @@ const ALLOWED_GROUPS = ['Science', 'Humanities', 'Business Studies'];
 
 export const getLeaderboard = async (req, res) => {
   try {
-    const limit = Math.min(1000, Math.max(1, parseInt(req.query.limit, 10) || 1000));
+    const limit = Math.min(5000, Math.max(1, parseInt(req.query.limit, 10) || 5000));
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const skip = (page - 1) * limit;
     const { group: reqGroup } = req.query;
@@ -158,8 +158,6 @@ export const getLeaderboard = async (req, res) => {
       maxMarks: 1250,
       institution: student.institution || 'Chittagong Education Board',
     }));
-
-    return res.status(200).json(leaderboard);
 
     return res.status(200).json(leaderboard);
   } catch (error) {
