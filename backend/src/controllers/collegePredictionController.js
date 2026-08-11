@@ -1,124 +1,46 @@
 import { Student } from '../models/Student.js';
 
-export const GOVT_SCIENCE_COLLEGES = [
+export const COLLEGE_CUTOFFS = [
   {
     name: 'Chittagong College',
-    seats: 660,
-    genderEligibility: 'Male & Female',
-    startRank: 1,
-    endRank: 660,
-    chance: 'Very High',
-    seatRange: '1-660',
-    medal: '🥇',
+    lastMarks: 1170,
+    gender: 'Male/Female',
   },
   {
     name: 'Govt. Hazi Muhammad Mohsin College, Chattogram',
-    seats: 650,
-    genderEligibility: 'Male & Female',
-    startRank: 661,
-    endRank: 1310,
-    chance: 'Very High',
-    seatRange: '661-1310',
-    medal: '🥈',
+    lastMarks: 1150,
+    gender: 'Male/Female',
   },
   {
     name: 'Government City College',
-    seats: 700,
-    genderEligibility: 'Male & Female',
-    startRank: 1311,
-    endRank: 2010,
-    chance: 'High',
-    seatRange: '1311-2010',
-    medal: '🥉',
+    lastMarks: 1131,
+    gender: 'Male/Female',
   },
   {
     name: "Chittagong Government Women's College",
-    seats: 600,
-    genderEligibility: 'Female Only',
-    startRank: 2011,
-    endRank: 2610,
-    chance: 'High',
-    seatRange: '2011-2610',
-    medal: '🏫',
+    lastMarks: 1114,
+    gender: 'Female',
   },
   {
     name: 'Bakalia Government College',
-    seats: 450,
-    genderEligibility: 'Male & Female',
-    startRank: 2611,
-    endRank: 3060,
-    chance: 'Moderate',
-    seatRange: '2611-3060',
-    medal: '🏫',
+    lastMarks: 1107,
+    gender: 'Male/Female',
   },
   {
     name: 'Chattogram Govt. Model School & College',
-    seats: 450,
-    genderEligibility: 'Male & Female',
-    startRank: 3061,
-    endRank: 3510,
-    chance: 'Moderate',
-    seatRange: '3061-3510',
-    medal: '🏫',
+    lastMarks: 1100,
+    gender: 'Male/Female',
   },
   {
     name: 'Chittagong Collegiate College',
-    seats: 200,
-    genderEligibility: 'Male Only',
-    startRank: 3511,
-    endRank: 3710,
-    chance: 'Moderate',
-    seatRange: '3511-3710',
-    medal: '🏫',
+    lastMarks: 1090,
+    gender: 'Male',
   },
   {
     name: 'Govt. Ashekane Awlia Degree College',
-    seats: 100,
-    genderEligibility: 'Male & Female',
-    startRank: 3711,
-    endRank: 3810,
-    chance: 'Moderate',
-    seatRange: '3711-3810',
-    medal: '🏫',
+    lastMarks: 1050,
+    gender: 'Male/Female',
   },
-];
-
-// Female Priority Order:
-// 1. Chittagong Government Women's College (600) - Female Only
-// 2. Chittagong College (660) - Male & Female
-// 3. Govt. Hazi Muhammad Mohsin College, Chattogram (650) - Male & Female
-// 4. Government City College (700) - Male & Female
-// 5. Bakalia Government College (450) - Male & Female
-// 6. Chattogram Govt. Model School & College (450) - Male & Female
-// 7. Govt. Ashekane Awlia Degree College (100) - Male & Female
-// (Excludes Chittagong Collegiate College - Male Only)
-const FEMALE_COLLEGE_ORDER = [
-  "Chittagong Government Women's College",
-  'Chittagong College',
-  'Govt. Hazi Muhammad Mohsin College, Chattogram',
-  'Government City College',
-  'Bakalia Government College',
-  'Chattogram Govt. Model School & College',
-  'Govt. Ashekane Awlia Degree College',
-];
-
-// Male Priority Order:
-// 1. Chittagong College (660) - Male & Female
-// 2. Govt. Hazi Muhammad Mohsin College, Chattogram (650) - Male & Female
-// 3. Government City College (700) - Male & Female
-// 4. Bakalia Government College (450) - Male & Female
-// 5. Chattogram Govt. Model School & College (450) - Male & Female
-// 6. Chittagong Collegiate College (200) - Male Only
-// 7. Govt. Ashekane Awlia Degree College (100) - Male & Female
-// (Excludes Chittagong Government Women's College - Female Only)
-const MALE_COLLEGE_ORDER = [
-  'Chittagong College',
-  'Govt. Hazi Muhammad Mohsin College, Chattogram',
-  'Government City College',
-  'Bakalia Government College',
-  'Chattogram Govt. Model School & College',
-  'Chittagong Collegiate College',
-  'Govt. Ashekane Awlia Degree College',
 ];
 
 export const detectGender = (student) => {
@@ -170,6 +92,14 @@ export const detectGender = (student) => {
   return 'Male';
 };
 
+export const calculateChance = (studentMarks, cutoff) => {
+  const diff = studentMarks - cutoff;
+  if (diff >= 20) return 'Very High';
+  if (diff >= 5) return 'High';
+  if (diff >= -20) return 'Moderate';
+  return 'Low';
+};
+
 export const getCollegePrediction = async (req, res) => {
   try {
     const roll = req.params.roll || req.query.roll;
@@ -184,11 +114,12 @@ export const getCollegePrediction = async (req, res) => {
       return res.status(404).json({ error: 'Student not found.' });
     }
 
-    const effectiveRankTotalMarks = Math.min(
-      1250,
-      student.rankTotalMarks ?? student.totalMarks
-    );
+    const totalMarks = student.totalMarks ?? 0;
+    const gender = detectGender(student);
+    const group = student.group || 'Science';
 
+    // Rank lookup for reference
+    const effectiveRankTotalMarks = Math.min(1250, student.rankTotalMarks ?? student.totalMarks);
     const higherRankCount = await Student.countDocuments({
       $or: [
         { rankTotalMarks: { $gt: effectiveRankTotalMarks } },
@@ -203,60 +134,54 @@ export const getCollegePrediction = async (req, res) => {
         },
       ],
     });
-
     const rank = higherRankCount + 1;
-    const group = student.group || 'Science';
-    const gender = detectGender(student);
 
-    let predictedCollege = 'Private / Non-Govt. College';
-    let chance = 'Low';
-    let seatRange = '3811+';
+    // Filter eligible colleges based on gender eligibility rules
+    const eligibleColleges = COLLEGE_CUTOFFS.filter((col) => {
+      if (gender === 'Female' && col.gender === 'Male') return false;
+      if (gender === 'Male' && col.gender === 'Female') return false;
+      return true;
+    });
 
-    if (group === 'Science') {
-      const targetOrder = gender === 'Female' ? FEMALE_COLLEGE_ORDER : MALE_COLLEGE_ORDER;
-      const eligibleColleges = targetOrder
-        .map((name) => GOVT_SCIENCE_COLLEGES.find((c) => c.name === name))
-        .filter(Boolean);
+    let predictedCollegeObj = null;
 
-      let cumulativeSeats = 0;
-      let matched = null;
+    // Find highest cutoff college where student totalMarks >= lastMarks
+    for (const col of eligibleColleges) {
+      if (totalMarks >= col.lastMarks) {
+        predictedCollegeObj = col;
+        break;
+      }
+    }
 
+    // If totalMarks is below all cutoffs, pick the highest college where student is within 20 marks
+    if (!predictedCollegeObj) {
       for (const col of eligibleColleges) {
-        const start = cumulativeSeats + 1;
-        const end = cumulativeSeats + col.seats;
-        cumulativeSeats = end;
-
-        if (rank <= end) {
-          matched = {
-            ...col,
-            startRank: start,
-            endRank: end,
-            seatRange: `${start}-${end}`,
-          };
+        if (totalMarks >= col.lastMarks - 20) {
+          predictedCollegeObj = col;
           break;
         }
       }
-
-      if (matched) {
-        predictedCollege = matched.name;
-        chance = matched.chance;
-        seatRange = matched.seatRange;
-      }
-    } else {
-      predictedCollege = 'Science Group Only';
-      chance = 'N/A';
-      seatRange = 'N/A';
     }
+
+    // Fallback if below all thresholds
+    if (!predictedCollegeObj && eligibleColleges.length > 0) {
+      predictedCollegeObj = eligibleColleges[eligibleColleges.length - 1];
+    }
+
+    const predictedCollege = predictedCollegeObj ? predictedCollegeObj.name : 'Govt. Ashekane Awlia Degree College';
+    const lastCutoff = predictedCollegeObj ? predictedCollegeObj.lastMarks : 1050;
+    const chance = predictedCollegeObj ? calculateChance(totalMarks, lastCutoff) : 'Low';
 
     return res.status(200).json({
       name: student.name || '',
       roll: student.roll,
       group,
       gender,
+      totalMarks,
       rank,
       predictedCollege,
+      lastCutoff,
       chance,
-      seatRange,
     });
   } catch (error) {
     console.error('Error fetching college prediction:', error);

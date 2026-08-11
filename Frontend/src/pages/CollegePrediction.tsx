@@ -13,7 +13,8 @@ import {
   ShieldAlert,
   TrendingUp,
   Info,
-  UserCheck,
+  BarChart3,
+  Target,
 } from 'lucide-react';
 import { StudentDetailsModal } from '../components/StudentDetailsModal';
 
@@ -22,78 +23,83 @@ export interface PredictionData {
   roll: string;
   group: string;
   gender?: string;
+  totalMarks: number;
   rank: number;
   predictedCollege: string;
+  lastCutoff: number;
   chance: string;
-  seatRange: string;
 }
 
-export const GOVT_SCIENCE_COLLEGES_DATA = [
+export const COLLEGE_CUTOFFS_DATA = [
   {
     name: 'Chittagong College',
-    seats: 660,
+    lastCutoff: 1170,
     genderEligibility: 'Male & Female',
-    range: '1 – 660',
-    chance: 'Very High',
     medal: '🥇',
   },
   {
     name: 'Govt. Hazi Muhammad Mohsin College, Chattogram',
-    seats: 650,
+    lastCutoff: 1150,
     genderEligibility: 'Male & Female',
-    range: '661 – 1,310',
-    chance: 'Very High',
     medal: '🥈',
   },
   {
     name: 'Government City College',
-    seats: 700,
+    lastCutoff: 1131,
     genderEligibility: 'Male & Female',
-    range: '1,311 – 2,010',
-    chance: 'High',
     medal: '🥉',
   },
   {
     name: "Chittagong Government Women's College",
-    seats: 600,
+    lastCutoff: 1114,
     genderEligibility: 'Female Only',
-    range: '2,011 – 2,610',
-    chance: 'High',
     medal: '🏫',
   },
   {
     name: 'Bakalia Government College',
-    seats: 450,
+    lastCutoff: 1107,
     genderEligibility: 'Male & Female',
-    range: '2,611 – 3,060',
-    chance: 'Moderate',
     medal: '🏫',
   },
   {
     name: 'Chattogram Govt. Model School & College',
-    seats: 450,
+    lastCutoff: 1100,
     genderEligibility: 'Male & Female',
-    range: '3,061 – 3,510',
-    chance: 'Moderate',
     medal: '🏫',
   },
   {
     name: 'Chittagong Collegiate College',
-    seats: 200,
+    lastCutoff: 1090,
     genderEligibility: 'Male Only',
-    range: '3,511 – 3,710',
-    chance: 'Moderate',
     medal: '🏫',
   },
   {
     name: 'Govt. Ashekane Awlia Degree College',
-    seats: 100,
+    lastCutoff: 1050,
     genderEligibility: 'Male & Female',
-    range: '3,711 – 3,810',
-    chance: 'Moderate',
     medal: '🏫',
   },
 ];
+
+export const calculateCollegeChance = (
+  studentMarks: number,
+  lastCutoff: number,
+  studentGender?: string,
+  collegeGender?: string
+) => {
+  if (studentGender === 'Female' && collegeGender === 'Male Only') {
+    return 'Not Eligible';
+  }
+  if (studentGender === 'Male' && collegeGender === 'Female Only') {
+    return 'Not Eligible';
+  }
+
+  const diff = studentMarks - lastCutoff;
+  if (diff >= 20) return 'Very High';
+  if (diff >= 5) return 'High';
+  if (diff >= -20) return 'Moderate';
+  return 'Low';
+};
 
 export const CollegePrediction: React.FC = () => {
   const [inputRoll, setInputRoll] = useState<string>('');
@@ -157,32 +163,42 @@ export const CollegePrediction: React.FC = () => {
   const getChanceBadge = (chance: string) => {
     switch (chance.toLowerCase()) {
       case 'very high':
-      case 'excellent chance':
         return (
-          <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shadow-xs">
+          <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 shadow-xs">
             <Sparkles className="w-4 h-4 text-emerald-600" />
-            Very High Chance
+            Very High
           </span>
         );
       case 'high':
-      case 'good chance':
         return (
-          <span className="px-3.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shadow-xs">
+          <span className="px-3.5 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 shadow-xs">
             <TrendingUp className="w-4 h-4 text-blue-600" />
-            High Chance
+            High
           </span>
         );
       case 'moderate':
         return (
-          <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs sm:text-sm font-extrabold flex items-center gap-1.5 shadow-xs">
+          <span className="px-3.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-1.5 shadow-xs">
             <CheckCircle2 className="w-4 h-4 text-amber-600" />
-            Moderate Chance
+            Moderate
+          </span>
+        );
+      case 'low':
+        return (
+          <span className="px-3.5 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-200 text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 shadow-xs">
+            <Info className="w-4 h-4 text-rose-500" />
+            Low
+          </span>
+        );
+      case 'not eligible':
+        return (
+          <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-400 border border-slate-200 text-xs font-semibold">
+            Not Eligible
           </span>
         );
       default:
         return (
-          <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-xs">
-            <Info className="w-4 h-4 text-slate-500" />
+          <span className="px-3.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs sm:text-sm font-bold">
             {chance}
           </span>
         );
@@ -216,7 +232,7 @@ export const CollegePrediction: React.FC = () => {
           </h1>
 
           <p className="font-jakarta text-sm sm:text-base text-slate-600 font-medium max-w-2xl mx-auto">
-            Estimate your possible government college admission chance based on Chittagong Board merit position.
+            Estimate your possible government college admission chance based on Chittagong Board total marks and previous cutoff trends.
           </p>
         </div>
 
@@ -226,7 +242,7 @@ export const CollegePrediction: React.FC = () => {
           <div>
             <span className="font-outfit font-extrabold text-amber-900 block mb-0.5">Disclaimer</span>
             <p className="text-amber-800 font-medium leading-relaxed">
-              Disclaimer: This is an unofficial merit analytics platform based on publicly available Chittagong Board result data. Rankings are calculated using a 1250 marks scale and may differ from official board rankings.
+              This is an unofficial admission prediction based on previous admission cutoff trends and available data. Final admission depends on official government admission policies and merit lists.
             </p>
           </div>
         </div>
@@ -306,52 +322,53 @@ export const CollegePrediction: React.FC = () => {
               </div>
             </div>
 
-            {/* Main Result Display Grid (3 Columns) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Main Result Display Grid (4 Cards) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               
               {/* Board Rank Card */}
-              <div className="bg-slate-50/80 border border-slate-100 p-5 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Board Merit Rank</span>
-                  <Award className="w-4 h-4 text-amber-500" />
+              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
+                  <span>Board Rank</span>
+                  <Award className="w-3.5 h-3.5 text-amber-500" />
                 </div>
-                <div className="font-outfit font-black text-3xl sm:text-4xl text-emerald-600 tracking-tight">
+                <div className="font-outfit font-black text-2xl sm:text-3xl text-emerald-600 tracking-tight">
                   #{prediction.rank}
                 </div>
-                <span className="text-[11px] text-slate-500 font-medium block">
-                  Chittagong Board Merit Position
-                </span>
               </div>
 
-              {/* Eligible Category / Gender Card */}
-              <div className="bg-slate-50/80 border border-slate-100 p-5 rounded-2xl space-y-2 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Eligible Category</span>
-                  <UserCheck className="w-4 h-4 text-indigo-600" />
+              {/* Your Marks Card */}
+              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
+                  <span>Your Marks</span>
+                  <BarChart3 className="w-3.5 h-3.5 text-indigo-600" />
                 </div>
-                <div>
-                  <span className="font-outfit font-extrabold text-base sm:text-lg text-slate-900 block">
-                    {prediction.gender || 'Male'} Science Student
-                  </span>
+                <div className="font-outfit font-bold text-lg sm:text-xl text-slate-900">
+                  {prediction.totalMarks} / 1250
                 </div>
-                <span className="text-[11px] text-slate-500 font-medium block">
-                  Gender-Scoped Seat Eligibility
-                </span>
+              </div>
+
+              {/* Last Cutoff Card */}
+              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
+                  <span>Last Cutoff</span>
+                  <Target className="w-3.5 h-3.5 text-amber-600" />
+                </div>
+                <div className="font-outfit font-bold text-lg sm:text-xl text-amber-700">
+                  {prediction.lastCutoff} Marks
+                </div>
               </div>
 
               {/* Admission Chance Card */}
-              <div className="bg-slate-50/80 border border-slate-100 p-5 rounded-2xl space-y-2 flex flex-col justify-between">
-                <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                  <span>Admission Chance</span>
-                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center flex flex-col justify-between items-center">
+                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
+                  <span>Chance</span>
+                  <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                 </div>
                 <div>
                   {getChanceBadge(prediction.chance)}
                 </div>
-                <span className="text-[11px] text-slate-500 font-medium block">
-                  Seat Range: {prediction.seatRange}
-                </span>
               </div>
+
             </div>
 
             {/* Predicted College Highlight Card */}
@@ -359,7 +376,7 @@ export const CollegePrediction: React.FC = () => {
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
               <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-                Estimated Possible Government College
+                🎓 Predicted Government College
               </span>
 
               <div className="flex items-center gap-3">
@@ -370,8 +387,9 @@ export const CollegePrediction: React.FC = () => {
               </div>
 
               <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300 font-medium flex-wrap gap-2">
-                <span>Prediction Based On: SSC '26 Estimated Merit Position</span>
-                <span className="text-amber-400 font-bold">Chittagong Board Standard</span>
+                <span>Your Marks: <strong className="text-white">{prediction.totalMarks} / 1250</strong></span>
+                <span>Last Cutoff: <strong className="text-amber-400">{prediction.lastCutoff} Marks</strong></span>
+                <span>Chance: <strong className="text-emerald-400">{prediction.chance}</strong></span>
               </div>
             </div>
 
@@ -400,21 +418,21 @@ export const CollegePrediction: React.FC = () => {
           </div>
         )}
 
-        {/* Science Group Government Colleges Seat Table */}
+        {/* Government Colleges Cutoff Table */}
         <div className="max-w-4xl mx-auto space-y-4 pt-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 pb-4">
             <div>
               <h2 className="font-outfit font-black text-xl sm:text-2xl text-slate-900 flex items-center gap-2">
                 <Building2 className="w-6 h-6 text-indigo-600" />
-                <span>Chittagong Science Group Government College Seats</span>
+                <span>Chittagong Science Group Government College Cutoffs</span>
               </h2>
               <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                Science seat breakdown, gender eligibility, and merit rank cutoff ranges for government colleges.
+                Last admitted cutoff marks, gender eligibility, and predicted admission chance for Chittagong Govt. Colleges.
               </p>
             </div>
 
             <div className="px-4 py-2 rounded-xl bg-indigo-50 border border-indigo-200 text-indigo-800 text-xs font-bold shrink-0 text-center">
-              Total Science Seats: <span className="text-indigo-700 font-extrabold text-sm">3,810 Seats</span>
+              Max Total Marks: <span className="text-indigo-700 font-extrabold text-sm">1,250 Scale</span>
             </div>
           </div>
 
@@ -425,44 +443,48 @@ export const CollegePrediction: React.FC = () => {
                   <tr>
                     <th className="py-4 px-4 text-center">Rank Tier</th>
                     <th className="py-4 px-4">College Name</th>
-                    <th className="py-4 px-4 text-center">Science Seats</th>
+                    <th className="py-4 px-4 text-center">Last Cutoff</th>
                     <th className="py-4 px-4 text-center">Gender Eligibility</th>
-                    <th className="py-4 px-4 text-center">Merit Range</th>
-                    <th className="py-4 px-4 text-center">Admission Chance</th>
+                    <th className="py-4 px-4 text-center">Your Chance</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs sm:text-sm font-jakarta text-slate-800">
-                  {GOVT_SCIENCE_COLLEGES_DATA.map((col) => (
-                    <tr
-                      key={col.name}
-                      className={`hover:bg-indigo-50/60 transition-colors ${
-                        prediction && prediction.predictedCollege === col.name
-                          ? 'bg-indigo-50/90 border-l-4 border-l-indigo-600'
-                          : ''
-                      }`}
-                    >
-                      <td className="py-3.5 px-4 text-center font-mono text-base">{col.medal}</td>
-                      <td className="py-3.5 px-4 font-outfit font-bold text-slate-900">{col.name}</td>
-                      <td className="py-3.5 px-4 text-center font-mono font-bold text-indigo-600">{col.seats}</td>
-                      <td className="py-3.5 px-4 text-center font-jakarta font-medium text-slate-700">
-                        {col.genderEligibility}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-mono text-slate-600">{col.range}</td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
-                            col.chance === 'Very High'
-                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                              : col.chance === 'High'
-                              ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}
-                        >
-                          {col.chance}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {COLLEGE_CUTOFFS_DATA.map((col) => {
+                    const isPredicted = prediction && prediction.predictedCollege === col.name;
+                    const computedChance = prediction
+                      ? calculateCollegeChance(
+                          prediction.totalMarks,
+                          col.lastCutoff,
+                          prediction.gender,
+                          col.genderEligibility
+                        )
+                      : null;
+
+                    return (
+                      <tr
+                        key={col.name}
+                        className={`hover:bg-indigo-50/60 transition-colors ${
+                          isPredicted ? 'bg-indigo-50/90 border-l-4 border-l-indigo-600' : ''
+                        }`}
+                      >
+                        <td className="py-3.5 px-4 text-center font-mono text-base">{col.medal}</td>
+                        <td className="py-3.5 px-4 font-outfit font-bold text-slate-900">{col.name}</td>
+                        <td className="py-3.5 px-4 text-center font-mono font-bold text-amber-700 text-sm sm:text-base">
+                          {col.lastCutoff} Marks
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-jakarta font-medium text-slate-700">
+                          {col.genderEligibility}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          {computedChance ? (
+                            getChanceBadge(computedChance)
+                          ) : (
+                            <span className="text-slate-400 font-mono text-xs">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
