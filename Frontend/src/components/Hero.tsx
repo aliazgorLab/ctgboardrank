@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { 
   ArrowRight, 
   Sparkles, 
@@ -53,13 +54,13 @@ export const Hero = () => {
             {/* Side-by-Side CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center gap-3.5 w-full sm:w-auto pt-2">
               {/* Primary Button */}
-              <a
-                href="#rank-checker"
+              <Link
+                to="/check-result"
                 className="font-outfit font-bold w-full sm:w-auto px-8 py-4 text-base text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-md hover:shadow-slate-900/20 transition-all duration-200 flex items-center justify-center gap-2.5 group"
               >
                 Check My Rank Now
                 <ArrowRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
-              </a>
+              </Link>
 
               {/* Secondary Button */}
               <a

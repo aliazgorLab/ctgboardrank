@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
+import { CheckResult } from './pages/CheckResult';
 import { Leaderboard } from './pages/Leaderboard';
 import { ZahidChemClinic } from './pages/ZahidChemClinic';
 import { ScholarshipPopup } from './components/ScholarshipPopup';
@@ -18,6 +19,7 @@ export function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/check-result" element={<CheckResult />} />
             <Route path="/leaderboard" element={<Leaderboard />} />
             <Route path="/zahid-chem-clinic" element={<ZahidChemClinic />} />
           </Routes>

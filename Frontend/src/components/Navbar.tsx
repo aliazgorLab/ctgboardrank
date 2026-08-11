@@ -49,12 +49,15 @@ export const Navbar = () => {
 
           {/* Center Navigation Links */}
           <nav className="hidden md:flex items-center gap-8">
-            <a 
-              href="/#rank-checker" 
-              className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors"
+            <Link 
+              to="/check-result" 
+              className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                location.pathname === '/check-result' ? 'text-indigo-600 font-bold' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              Check Rank
-            </a>
+              <Sparkles className="w-4 h-4 text-indigo-600" />
+              Check Result
+            </Link>
             <Link 
               to="/leaderboard" 
               className="text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1.5"
@@ -103,13 +106,18 @@ export const Navbar = () => {
       {/* Mobile Menu Dropdown */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-xl px-4 pt-3 pb-6 space-y-3 font-jakarta">
-          <a
-            href="/#rank-checker"
+          <Link
+            to="/check-result"
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-indigo-600"
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${
+              location.pathname === '/check-result'
+                ? 'bg-indigo-50 text-indigo-700 font-bold'
+                : 'text-slate-700 hover:bg-slate-50 hover:text-indigo-600'
+            }`}
           >
-            Check Rank
-          </a>
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            Check Result
+          </Link>
           <Link
             to="/leaderboard"
             onClick={() => setMobileMenuOpen(false)}
