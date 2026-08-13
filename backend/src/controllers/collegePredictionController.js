@@ -98,7 +98,7 @@ export const detectGender = (student) => {
     'MEHJABIN', 'AFIA', 'ANIKA', 'MAHMUDA', 'SAMIA', 'AISHA', 'SUMAIYA',
     'SUMAYA', 'SABRINA', 'NISHAT', 'MARIA', 'SANJIDA', 'ISRAT', 'ROZA',
     'NAURIN', 'RAISA', 'FABIHA', 'RUKAIYA', 'LAMIA', 'JAHAN', 'FARIHA',
-    'HUMAIRA', 'TAHMINA', 'NAZIFA', 'NOWER', 'TOWHIDA', 'BUSHRA', 'FERDOUSI',
+    'HUMAIRA', 'TAHMINA', 'NAZIFA', 'NAJIFA', 'NOWER', 'TOWHIDA', 'BUSHRA', 'FERDOUSI',
     'SYEDA', 'OINDREE', 'SHAMIMA', 'SALMA', 'TANISHA', 'NAYMA', 'TABASSUM',
     'MST', 'MST.', 'MISS', 'MS'
   ];
@@ -110,6 +110,40 @@ export const detectGender = (student) => {
   }
 
   return 'Male';
+};
+
+export const predictCollege = (marks, gender) => {
+  if (marks >= 1170 && marks <= 1250) {
+    return 'Chittagong College';
+  } else if (marks >= 1150 && marks <= 1169) {
+    return 'Govt. Hazi Muhammad Mohsin College, Chattogram';
+  } else if (marks >= 1131 && marks <= 1149) {
+    return 'Government City College';
+  }
+  // Female only
+  else if (gender === 'Female' && marks >= 1114 && marks <= 1130) {
+    return "Chittagong Government Women's College";
+  }
+  // Male and Female
+  else if (marks >= 1107 && marks <= 1130) {
+    return 'Bakalia Government College';
+  } else if (marks >= 1100 && marks <= 1106) {
+    return 'Chattogram Govt. Model School & College';
+  }
+  // Male only
+  else if (gender === 'Male' && marks >= 1090 && marks <= 1099) {
+    return 'Chittagong Collegiate College';
+  }
+  // Male only
+  else if (gender === 'Male' && marks >= 1050 && marks <= 1089) {
+    return 'Govt. Ashekane Awlia Degree College';
+  }
+  // Female
+  else if (gender === 'Female' && marks >= 1050 && marks <= 1099) {
+    return 'Govt. Ashekane Awlia Degree College';
+  } else {
+    return 'No Government College Prediction Available';
+  }
 };
 
 export const calculateChance = (studentMarks, cutoff) => {
@@ -151,42 +185,20 @@ export const getCollegePrediction = async (req, res) => {
       });
     }
 
-    // Rank lookup for reference
-    const effectiveRankTotalMarks = Math.min(1250, student.rankTotalMarks ?? student.totalMarks);
-    const higherRankCount = await Student.countDocuments({
-      $or: [
-        { rankTotalMarks: { $gt: effectiveRankTotalMarks } },
-        {
-          rankTotalMarks: effectiveRankTotalMarks,
-          gpa: { $gt: student.gpa },
-        },
-        {
-          rankTotalMarks: effectiveRankTotalMarks,
-          gpa: student.gpa,
-          roll: { $lt: student.roll },
-        },
-      ],
-    });
-    const rank = higherRankCount + 1;
+    const predictedCollege = predictCollege(totalMarks, gender);
 
-    // Step 1: Filter Gender Eligibility
-    const eligibleColleges = GOVT_COLLEGES.filter((col) => col.gender.includes(gender));
+    const collegeCutoffMap = {
+      'Chittagong College': 1170,
+      'Govt. Hazi Muhammad Mohsin College, Chattogram': 1150,
+      'Government City College': 1131,
+      "Chittagong Government Women's College": 1114,
+      'Bakalia Government College': 1107,
+      'Chattogram Govt. Model School & College': 1100,
+      'Chittagong Collegiate College': 1090,
+      'Govt. Ashekane Awlia Degree College': 1050,
+    };
 
-    // Step 2: Compare Marks
-    let predictedCollegeObj = null;
-    for (const col of eligibleColleges) {
-      if (totalMarks >= col.cutoff) {
-        predictedCollegeObj = col;
-        break;
-      }
-    }
-
-    if (!predictedCollegeObj && eligibleColleges.length > 0) {
-      predictedCollegeObj = eligibleColleges[eligibleColleges.length - 1];
-    }
-
-    const predictedCollege = predictedCollegeObj ? predictedCollegeObj.name : 'Govt. Ashekane Awlia Degree College';
-    const cutoff = predictedCollegeObj ? predictedCollegeObj.cutoff : 1050;
+    const cutoff = collegeCutoffMap[predictedCollege] || 1050;
     const chance = calculateChance(totalMarks, cutoff);
 
     return res.status(200).json({
@@ -196,7 +208,6 @@ export const getCollegePrediction = async (req, res) => {
       gender,
       totalMarks,
       marks: totalMarks,
-      rank,
       predictedCollege,
       cutoff,
       lastCutoff: cutoff,
@@ -208,4 +219,5 @@ export const getCollegePrediction = async (req, res) => {
     return res.status(500).json({ error: 'Internal Server Error. Please try again later.' });
   }
 };
+
 

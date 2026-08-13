@@ -8,7 +8,6 @@ import {
   AlertCircle,
   School,
   CheckCircle2,
-  Award,
   Building2,
   ShieldAlert,
   TrendingUp,
@@ -472,19 +471,8 @@ export const CollegePrediction: React.FC = () => {
             </div>
 
             {/* Main Result Display Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               
-              {/* Board Rank Card */}
-              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center">
-                <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
-                  <span>Board Rank</span>
-                  <Award className="w-3.5 h-3.5 text-amber-500" />
-                </div>
-                <div className="font-outfit font-black text-2xl sm:text-3xl text-emerald-600 tracking-tight">
-                  #{prediction.rank}
-                </div>
-              </div>
-
               {/* Your Marks Card */}
               <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center">
                 <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
@@ -496,10 +484,10 @@ export const CollegePrediction: React.FC = () => {
                 </div>
               </div>
 
-              {/* Last Cutoff Card */}
+              {/* Target Cutoff Card */}
               <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center">
                 <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
-                  <span>Last Cutoff</span>
+                  <span>Target Cutoff</span>
                   <Target className="w-3.5 h-3.5 text-amber-600" />
                 </div>
                 <div className="font-outfit font-bold text-lg sm:text-xl text-amber-700">
@@ -508,7 +496,7 @@ export const CollegePrediction: React.FC = () => {
               </div>
 
               {/* Admission Chance Card */}
-              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center flex flex-col justify-between items-center">
+              <div className="bg-slate-50/80 border border-slate-100 p-4 rounded-2xl space-y-1 text-center flex flex-col justify-between items-center col-span-2 sm:col-span-1">
                 <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-500">
                   <span>Chance</span>
                   <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
@@ -521,11 +509,11 @@ export const CollegePrediction: React.FC = () => {
             </div>
 
             {/* Predicted College Highlight Card */}
-            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border border-amber-500/40 p-6 rounded-2xl space-y-3 relative overflow-hidden text-white shadow-xl">
+            <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 border border-amber-500/40 p-6 rounded-2xl space-y-4 relative overflow-hidden text-white shadow-xl">
               <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">
-                🎓 Your Possible Government College
+              <span className="text-xs sm:text-sm font-extrabold text-amber-400 uppercase tracking-wider block">
+                🎓 Possible Government College
               </span>
 
               <div className="flex items-center gap-3">
@@ -535,18 +523,14 @@ export const CollegePrediction: React.FC = () => {
                 </h4>
               </div>
 
-              <div className="pt-3 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-300 font-medium">
+              <div className="pt-4 border-t border-slate-800/80 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300 font-medium">
                 <div>
                   <span className="text-slate-400 block text-[11px]">Your Marks:</span>
-                  <strong className="text-white text-sm">{prediction.totalMarks ?? prediction.marks} / 1250</strong>
+                  <strong className="text-white text-base sm:text-lg">{prediction.totalMarks ?? prediction.marks} / 1250</strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px]">Last Cutoff:</span>
-                  <strong className="text-amber-400 text-sm">{prediction.lastCutoff ?? prediction.cutoff} Marks</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px]">Admission Chance:</span>
-                  <strong className="text-emerald-400 text-sm">{prediction.chance}</strong>
+                  <span className="text-slate-400 block text-[11px]">Prediction Logic:</span>
+                  <strong className="text-emerald-400 text-sm sm:text-base">Based on SSC Science Group Cut-off Marks</strong>
                 </div>
               </div>
             </div>
