@@ -53,16 +53,23 @@ export const GOVT_COLLEGES = [
 
 export const COLLEGE_CUTOFFS = GOVT_COLLEGES;
 
-export const detectGender = (student) => {
-  if (student.gender) {
-    const g = String(student.gender).toLowerCase();
-    if (g.startsWith('f') || g === 'female') return 'Female';
-    if (g.startsWith('m') || g === 'male') return 'Male';
+export const detectGender = (student, reqGender) => {
+  // 1. Explicit request query/body parameter (manual fallback selection)
+  if (reqGender) {
+    const gReq = String(reqGender).trim().toLowerCase();
+    if (gReq === 'female' || gReq === 'f') return 'Female';
+    if (gReq === 'male' || gReq === 'm') return 'Male';
   }
 
-  const institution = (student.institution || '').toUpperCase();
-  const name = (student.name || '').toUpperCase();
+  // 2. Reliable MongoDB student gender field
+  if (student && student.gender) {
+    const g = String(student.gender).trim().toLowerCase();
+    if (g === 'female' || g === 'f') return 'Female';
+    if (g === 'male' || g === 'm') return 'Male';
+  }
 
+  // 3. Reliable explicit single-sex institution markers
+  const institution = (student?.institution || '').toUpperCase();
   if (
     institution.includes('GIRLS') ||
     institution.includes('WOMEN') ||
@@ -75,41 +82,13 @@ export const detectGender = (student) => {
 
   if (
     institution.includes('BOYS') ||
-    institution.includes('COLLEGIATE') ||
     institution.includes('BALOK')
   ) {
     return 'Male';
   }
 
-  const nameWords = name.split(/\s+/);
-
-  const maleKeywords = [
-    'MD', 'MD.', 'MUHAMMAD', 'MOHAMMAD', 'MOHAMMED', 'AHMED', 'SYED', 'SIUM', 'SAYED'
-  ];
-  for (const word of nameWords) {
-    if (maleKeywords.includes(word)) {
-      return 'Male';
-    }
-  }
-
-  const femaleKeywords = [
-    'AKTER', 'AKHTER', 'JANNAT', 'KHATUN', 'SULTANA', 'BEGUM', 'NUSRAT',
-    'TASNEEM', 'TASNIM', 'FATEMA', 'FARZANA', 'SADIA', 'SAYMA',
-    'MEHJABIN', 'AFIA', 'ANIKA', 'MAHMUDA', 'SAMIA', 'AISHA', 'SUMAIYA',
-    'SUMAYA', 'SABRINA', 'NISHAT', 'MARIA', 'SANJIDA', 'ISRAT', 'ROZA',
-    'NAURIN', 'RAISA', 'FABIHA', 'RUKAIYA', 'LAMIA', 'JAHAN', 'FARIHA',
-    'HUMAIRA', 'TAHMINA', 'NAZIFA', 'NAJIFA', 'NOWER', 'TOWHIDA', 'BUSHRA', 'FERDOUSI',
-    'SYEDA', 'OINDREE', 'SHAMIMA', 'SALMA', 'TANISHA', 'NAYMA', 'TABASSUM',
-    'MST', 'MST.', 'MISS', 'MS'
-  ];
-
-  for (const word of nameWords) {
-    if (femaleKeywords.includes(word)) {
-      return 'Female';
-    }
-  }
-
-  return 'Male';
+  // NEVER guess gender from student name (student.name keywords removed completely)
+  return null;
 };
 
 export const predictCollege = (marks, gender) => {
@@ -159,6 +138,7 @@ export const calculateChance = (studentMarks, cutoff) => {
 export const getCollegePrediction = async (req, res) => {
   try {
     const roll = req.params.roll || req.query.roll;
+    const reqGender = req.query.gender || req.body?.gender;
 
     if (!roll || String(roll).trim() === '') {
       return res.status(400).json({ error: 'Student roll number is required.' });
@@ -171,7 +151,6 @@ export const getCollegePrediction = async (req, res) => {
     }
 
     const totalMarks = student.totalMarks ?? 0;
-    const gender = detectGender(student);
     const group = student.group || 'Science';
 
     // Group Eligibility Check: Prediction currently available only for Science group students
@@ -182,6 +161,22 @@ export const getCollegePrediction = async (req, res) => {
         group,
         predictionAvailable: false,
         message: 'Government college prediction is currently available only for Science group students.',
+      });
+    }
+
+    const gender = detectGender(student, reqGender);
+
+    if (!gender) {
+      return res.status(200).json({
+        name: student.name || '',
+        roll: student.roll,
+        group,
+        gender: null,
+        genderConfirmed: false,
+        totalMarks,
+        marks: totalMarks,
+        predictionAvailable: false,
+        message: 'Gender information unavailable. Please verify manually.',
       });
     }
 
@@ -206,6 +201,7 @@ export const getCollegePrediction = async (req, res) => {
       roll: student.roll,
       group,
       gender,
+      genderConfirmed: true,
       totalMarks,
       marks: totalMarks,
       predictedCollege,

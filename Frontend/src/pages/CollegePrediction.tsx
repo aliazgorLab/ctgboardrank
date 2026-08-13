@@ -23,7 +23,8 @@ export interface PredictionData {
   name: string;
   roll: string;
   group: string;
-  gender?: string;
+  gender?: string | null;
+  genderConfirmed?: boolean;
   totalMarks?: number;
   marks?: number;
   rank?: number;
@@ -125,7 +126,7 @@ export const COLLEGE_CUTOFFS_DATA = GOVT_COLLEGES;
 export const calculateCollegeChance = (
   studentMarks: number,
   cutoff: number,
-  studentGender?: string,
+  studentGender?: string | null,
   collegeGender?: string[] | string
 ) => {
   if (studentGender === 'Female') {
@@ -156,7 +157,7 @@ export const CollegePrediction: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const fetchPrediction = async (rollToFetch: string) => {
+  const fetchPrediction = async (rollToFetch: string, genderToPass?: string) => {
     const trimmedRoll = rollToFetch.trim();
     if (!trimmedRoll) return;
 
@@ -165,7 +166,12 @@ export const CollegePrediction: React.FC = () => {
 
     try {
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-      const res = await fetch(`${baseUrl}/api/college-prediction/${encodeURIComponent(trimmedRoll)}`);
+      let url = `${baseUrl}/api/college-prediction/${encodeURIComponent(trimmedRoll)}`;
+      if (genderToPass) {
+        url += `?gender=${encodeURIComponent(genderToPass)}`;
+      }
+
+      const res = await fetch(url);
 
       if (!res.ok) {
         if (res.status === 404) {
@@ -189,9 +195,10 @@ export const CollegePrediction: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const rollParam = params.get('roll');
+    const genderParam = params.get('gender');
     if (rollParam && rollParam.trim() !== '') {
       setInputRoll(rollParam.trim());
-      fetchPrediction(rollParam.trim());
+      fetchPrediction(rollParam.trim(), genderParam ? genderParam.trim() : undefined);
     }
   }, [location.search]);
 
@@ -202,6 +209,13 @@ export const CollegePrediction: React.FC = () => {
       return;
     }
     navigate(`/college-prediction?roll=${encodeURIComponent(inputRoll.trim())}`);
+  };
+
+  const handleGenderSelect = (gender: 'Male' | 'Female') => {
+    if (prediction && prediction.roll) {
+      navigate(`/college-prediction?roll=${encodeURIComponent(prediction.roll)}&gender=${gender}`);
+      fetchPrediction(prediction.roll, gender);
+    }
   };
 
   const getChanceBadge = (chance: string) => {
@@ -348,7 +362,7 @@ export const CollegePrediction: React.FC = () => {
         </div>
 
         {/* Non-Science Student Info Card */}
-        {prediction && (prediction.predictionAvailable === false || prediction.group !== 'Science') && (
+        {prediction && prediction.group !== 'Science' && (
           <div className="max-w-3xl mx-auto bg-gradient-to-br from-blue-50 via-indigo-50/50 to-white border border-blue-200/90 rounded-3xl p-6 sm:p-10 shadow-xl shadow-blue-500/10 space-y-6 animate-in fade-in zoom-in-95 duration-300 font-jakarta">
             
             {/* Header Tag */}
@@ -435,8 +449,110 @@ export const CollegePrediction: React.FC = () => {
           </div>
         )}
 
-        {/* Prediction Results Card (Science Students Only) */}
-        {prediction && prediction.predictionAvailable !== false && prediction.group === 'Science' && (
+        {/* Gender Information Unavailable Fallback Card (Science Students with Unconfirmed Gender) */}
+        {prediction && prediction.group === 'Science' && (prediction.genderConfirmed === false || !prediction.gender) && (
+          <div className="max-w-3xl mx-auto bg-white border border-amber-200/90 rounded-3xl p-6 sm:p-10 shadow-xl shadow-amber-500/10 space-y-6 animate-in fade-in zoom-in-95 duration-300 font-jakarta">
+            
+            {/* Header / Student Tag */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-amber-100 pb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-amber-600 block">
+                    Verification Required
+                  </span>
+                  <h3 className="font-outfit font-extrabold text-xl sm:text-2xl text-slate-900">
+                    {prediction.name || 'STUDENT RESULT'}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-3 py-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-mono font-bold text-slate-700">
+                  Roll: #{prediction.roll}
+                </span>
+                <span className="px-3 py-1 rounded-xl bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-700">
+                  Group: {prediction.group}
+                </span>
+                {(prediction.totalMarks !== undefined || prediction.marks !== undefined) && (
+                  <span className="px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-700">
+                    Marks: {prediction.totalMarks ?? prediction.marks}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Warning Message Box */}
+            <div className="bg-amber-50/90 border border-amber-200 rounded-2xl p-5 sm:p-6 space-y-3 shadow-sm">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1.5">
+                  <h4 className="font-outfit font-bold text-base sm:text-lg text-amber-950">
+                    Gender information unavailable. Please verify manually.
+                  </h4>
+                  <p className="text-xs sm:text-sm text-amber-900 font-medium leading-relaxed font-jakarta">
+                    লিঙ্গ সংক্রান্ত তথ্য সিস্টেমে পাওয়া যায়নি। সঠিক সরকারি কলেজ ভর্তি পূর্বাভাস পাওয়ার জন্য অনুগ্রহ করে নিচে আপনার Gender (লিঙ্গ) ম্যানুয়ালি নির্বাচন করুন।
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Manual Fallback Selector Buttons */}
+            <div className="space-y-3 pt-2">
+              <label className="block text-xs sm:text-sm font-extrabold text-slate-800 font-outfit uppercase tracking-wider text-center">
+                👉 Select Student Gender to View Govt. College Prediction:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => handleGenderSelect('Male')}
+                  className="py-4 px-6 rounded-2xl border-2 border-indigo-200 hover:border-indigo-600 bg-indigo-50/40 hover:bg-indigo-50 flex items-center justify-center gap-3 font-outfit font-extrabold text-base sm:text-lg text-indigo-950 hover:text-indigo-600 transition-all shadow-md cursor-pointer hover:scale-[1.02]"
+                >
+                  <span className="text-2xl">👦</span>
+                  <span>Male (ছাত্র / ছেলে)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleGenderSelect('Female')}
+                  className="py-4 px-6 rounded-2xl border-2 border-purple-200 hover:border-purple-600 bg-purple-50/40 hover:bg-purple-50 flex items-center justify-center gap-3 font-outfit font-extrabold text-base sm:text-lg text-purple-950 hover:text-purple-600 transition-all shadow-md cursor-pointer hover:scale-[1.02]"
+                >
+                  <span className="text-2xl">👧</span>
+                  <span>Female (ছাত্রী / মেয়ে)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalRoll(prediction.roll);
+                  setIsModalOpen(true);
+                }}
+                className="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-outfit text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-indigo-500/20"
+              >
+                <School className="w-4 h-4 text-amber-300" />
+                <span>View Full Student Result & Marks Sheet</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate(`/check-result?roll=${encodeURIComponent(prediction.roll)}`)}
+                className="w-full py-3.5 px-5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-outfit text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border border-slate-800"
+              >
+                <span>Check Board Rank & Marks →</span>
+              </button>
+            </div>
+
+          </div>
+        )}
+
+        {/* Prediction Results Card (Science Students with Confirmed Gender) */}
+        {prediction && prediction.predictionAvailable !== false && prediction.genderConfirmed !== false && prediction.gender && prediction.group === 'Science' && (
           <div className="max-w-3xl mx-auto bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-10 shadow-2xl shadow-emerald-500/10 space-y-8 animate-in fade-in zoom-in-95 duration-300 font-jakarta">
             
             {/* Header / Student Tag */}
@@ -463,8 +579,16 @@ export const CollegePrediction: React.FC = () => {
                   Group: {prediction.group}
                 </span>
                 {prediction.gender && (
-                  <span className="px-3 py-1 rounded-xl bg-purple-50 border border-purple-200 text-xs font-bold text-purple-700">
+                  <span className="px-3 py-1 rounded-xl bg-purple-50 border border-purple-200 text-xs font-bold text-purple-700 flex items-center gap-1.5">
                     Gender: {prediction.gender}
+                    <button
+                      type="button"
+                      onClick={() => handleGenderSelect(prediction.gender === 'Male' ? 'Female' : 'Male')}
+                      className="text-[10px] text-purple-600 hover:text-purple-800 underline font-normal ml-1 cursor-pointer"
+                      title="Switch / Change Gender"
+                    >
+                      (Change)
+                    </button>
                   </span>
                 )}
               </div>
